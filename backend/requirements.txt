@@ -1,0 +1,17 @@
+django
+djangorestframework
+pygments
+
+openai
+pytesseract
+mysql-connector-python
+pillow
+
+numpy
+opencv-python
+pytest
+
+torch==2.4.1
+torchvision==0.19.1
+
+ultralytics
