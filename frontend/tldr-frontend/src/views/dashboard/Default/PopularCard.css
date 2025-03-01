@@ -1,0 +1,16 @@
+.message-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-area::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.message-area::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.message-area::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

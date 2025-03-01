@@ -4,7 +4,7 @@ import { RouterProvider } from 'react-router-dom';
 import router from './routes';
 
 // project imports
-import NavigationScroll from './web/layout/NavigationScroll';
+import NavigationScroll from './layout/NavigationScroll';
 
 import ThemeCustomization from './themes';
 
