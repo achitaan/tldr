@@ -1,11 +1,7 @@
 import React from 'react';
 import './ChatBar.css';
 
-interface ChatBarProps {
-  isOpen: boolean;
-}
-
-const ChatBar: React.FC<ChatBarProps> = ({ isOpen }) => {
+const ChatBar = ({ isOpen }) => {
   // We add the "open" class if isOpen is true
   const containerClass = `chat-bar-container ${isOpen ? 'open' : ''}`;
 

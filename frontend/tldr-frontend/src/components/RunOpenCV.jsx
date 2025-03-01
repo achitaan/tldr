@@ -1,10 +1,9 @@
-// RunOpenCV.tsx
 import React, { useEffect, useRef } from "react";
-import "./RunOpenCV.css"; // import your CSS file
+import "./RunOpenCV.css";
 
-const RunOpenCV: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+const RunOpenCV = () => {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
   const getVideo = async () => {
     try {
@@ -41,7 +40,7 @@ const RunOpenCV: React.FC = () => {
         id="input_video" 
         ref={videoRef} 
         className="limitedVideo"
-        playsInline // Add this to improve mobile compatibility
+        playsInline
       />
       <canvas id="output_video" />
     </div>

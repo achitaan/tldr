@@ -4,7 +4,7 @@ import OpenCvComponent from './components/RunOpenCV';
 import ChatButton from './components/ChatButton';
 import ChatBar from './components/ChatBar';
 
-const App: React.FC = () => {
+const App = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleToggleChat = () => {
@@ -19,7 +19,6 @@ const App: React.FC = () => {
       {/* The chat bar component */}
       <ChatBar isOpen={isChatOpen} />
       <OpenCvComponent />
-
     </div>
   );
 };

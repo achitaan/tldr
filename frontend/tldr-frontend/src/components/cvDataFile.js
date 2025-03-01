@@ -1,6 +1,6 @@
 import { getOpenCv } from "./loader";
 
-export async function loadDataFile(cvFilePath : string, url :string) {
+export async function loadDataFile(cvFilePath, url) {
   const cv = await getOpenCv();
   // see https://docs.opencv.org/master/utils.js
   const response = await fetch(url);
