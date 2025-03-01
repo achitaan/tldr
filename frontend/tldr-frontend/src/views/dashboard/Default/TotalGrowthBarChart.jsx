@@ -1,143 +1,135 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
-import Grid from '@mui/material/Grid2';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
+import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-
-// third party
-import ApexCharts from 'apexcharts';
-import Chart from 'react-apexcharts';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // project imports
-import useConfig from '../../../hooks/useConfig';
-import SkeletonTotalGrowthBarChart from '../../../ui-component/cards/Skeleton/TotalGrowthBarChart';
 import MainCard from '../../../ui-component/cards/MainCard';
 import { gridSpacing } from '../../../store/constant';
 
-// chart data
-import chartData from './chart-data/total-growth-bar-chart';
-
-const status = [
-  {
-    value: 'today',
-    label: 'Today'
-  },
-  {
-    value: 'month',
-    label: 'This Month'
-  },
-  {
-    value: 'year',
-    label: 'This Year'
-  }
-];
-
-export default function TotalGrowthBarChart({ isLoading }) {
-  const [value, setValue] = React.useState('today');
+export default function TotalGrowthBarChart({ isLoading: parentIsLoading }) {
   const theme = useTheme();
-  const { mode } = useConfig();
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const { primary } = theme.palette.text;
-  const darkLight = theme.palette.dark.light;
-  const divider = theme.palette.divider;
-  const grey500 = theme.palette.grey[500];
-
-  const primary200 = theme.palette.primary[200];
-  const primaryDark = theme.palette.primary.dark;
-  const secondaryMain = theme.palette.secondary.main;
-  const secondaryLight = theme.palette.secondary.light;
-
-  React.useEffect(() => {
-    const newChartData = {
-      ...chartData.options,
-      colors: [primary200, primaryDark, secondaryMain, secondaryLight],
-      xaxis: {
-        labels: {
-          style: {
-            style: { colors: primary }
+  const getVideo = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+        // Add event listener for loadedmetadata instead of using play()
+        videoRef.current.onloadedmetadata = async () => {
+          try {
+            await videoRef.current?.play();
+            setIsLoading(false);
+          } catch (err) {
+            console.error('Play error:', err);
+            setError(err.message);
           }
-        }
-      },
-      yaxis: {
-        labels: {
-          style: {
-            style: { colors: primary }
-          }
-        }
-      },
-      grid: { borderColor: divider },
-      tooltip: { theme: mode },
-      legend: { labels: { colors: grey500 } }
-    };
-
-    // do not load chart when loading
-    if (!isLoading) {
-      ApexCharts.exec(`bar-chart`, 'updateOptions', newChartData);
+        };
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      setError(err.message);
+      setIsLoading(false);
     }
-  }, [mode, primary200, primaryDark, secondaryMain, secondaryLight, primary, darkLight, divider, isLoading, grey500]);
+  };
+
+  useEffect(() => {
+    getVideo();
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, []);
 
   return (
-    <>
-      {isLoading ? (
-        <SkeletonTotalGrowthBarChart />
-      ) : (
-        <MainCard>
-          <Grid container spacing={gridSpacing}>
-            <Grid size={12}>
-              <Grid container sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                <Grid>
-                  <Grid container direction="column" spacing={1}>
-                    <Grid>
-                      <Typography variant="subtitle2">Total Growth</Typography>
-                    </Grid>
-                    <Grid>
-                      <Typography variant="h3">$2,324.00</Typography>
-                    </Grid>
-                  </Grid>
-                </Grid>
-                <Grid>
-                  <TextField id="standard-select-currency" select value={value} onChange={(e) => setValue(e.target.value)}>
-                    {status.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-              </Grid>
-            </Grid>
-            <Grid
-              size={12}
-              sx={{
-                ...theme.applyStyles('light', {
-                  '& .apexcharts-series:nth-of-type(4) path:hover': {
-                    filter: `brightness(0.95)`,
-                    transition: 'all 0.3s ease'
-                  }
-                }),
-                '& .apexcharts-menu': {
-                  bgcolor: 'background.paper'
-                },
-                '.apexcharts-theme-light .apexcharts-menu-item:hover': {
-                  bgcolor: 'dark.main'
-                },
-                '& .apexcharts-theme-light .apexcharts-menu-icon:hover svg, .apexcharts-theme-light .apexcharts-reset-icon:hover svg, .apexcharts-theme-light .apexcharts-selection-icon:not(.apexcharts-selected):hover svg, .apexcharts-theme-light .apexcharts-zoom-icon:not(.apexcharts-selected):hover svg, .apexcharts-theme-light .apexcharts-zoomin-icon:hover svg, .apexcharts-theme-light .apexcharts-zoomout-icon:hover svg':
-                  {
-                    fill: theme.palette.grey[400]
-                  }
+    <MainCard>
+      <Grid container spacing={gridSpacing}>
+        <Grid item xs={12}>
+        </Grid>
+        <Grid item xs={12}>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '600px',
+            backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5',
+            borderRadius: theme.shape.borderRadius,
+            overflow: 'hidden',
+            boxShadow: theme.shadows[5]
+          }}>
+            {(isLoading || parentIsLoading) && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 2
+              }}>
+                <CircularProgress color="primary" />
+              </div>
+            )}
+            {error && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 2
+              }}>
+                <Typography color="error">
+                  Camera Error: {error}
+                </Typography>
+              </div>
+            )}
+            <video 
+              ref={videoRef}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transition: 'opacity 0.3s ease',
+                opacity: isLoading ? 0 : 1
               }}
-            >
-              <Chart {...chartData} />
-            </Grid>
-          </Grid>
-        </MainCard>
-      )}
-    </>
+              playsInline
+              muted
+              autoPlay
+            />
+            <canvas 
+              id="output_video"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                display: 'none'
+              }}
+            />
+          </div>
+        </Grid>
+      </Grid>
+    </MainCard>
   );
 }
 
-TotalGrowthBarChart.propTypes = { isLoading: PropTypes.bool };
+TotalGrowthBarChart.propTypes = {
+  isLoading: PropTypes.bool
+};
