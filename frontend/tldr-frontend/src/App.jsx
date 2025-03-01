@@ -1,26 +1,25 @@
-import './App.css';
-import React, { useState } from 'react';
-import OpenCvComponent from './components/RunOpenCV';
-import ChatButton from './components/ChatButton';
-import ChatBar from './components/ChatBar';
+import { RouterProvider } from 'react-router-dom';
 
-const App = () => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
+// routing
+import router from './routes';
 
-  const handleToggleChat = () => {
-    setIsChatOpen((prev) => !prev);
-  };
+// project imports
+import NavigationScroll from './web/layout/NavigationScroll';
 
+import ThemeCustomization from './themes';
+
+// auth provider
+
+// ==============================|| APP ||============================== //
+
+export default function App() {
   return (
-    <div style={{ margin: '40px' }}>
-      <h1>TLDR</h1>
-      {/* Button that toggles the chat bar */}
-      <ChatButton onClick={handleToggleChat} isOpen={isChatOpen} />
-      {/* The chat bar component */}
-      <ChatBar isOpen={isChatOpen} />
-      <OpenCvComponent />
-    </div>
+    <ThemeCustomization>
+      <NavigationScroll>
+        <>
+          <RouterProvider router={router} />
+        </>
+      </NavigationScroll>
+    </ThemeCustomization>
   );
-};
-
-export default App;
+}
