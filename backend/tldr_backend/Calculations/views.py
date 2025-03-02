@@ -4,9 +4,14 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.files.base import ContentFile
+import base64
+import logging
 
 from .models import cvImage
 from .serializers import cvImageSerializer
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 @api_view(['GET'])
@@ -25,15 +30,28 @@ class cvImageList(generics.ListCreateAPIView):
         try:
             image_file = request.FILES.get('image')
             if not image_file:
-                return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'No image provided'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            serializer = self.serializer_class(data={'image': image_file})
+            # Add request to serializer context
+            serializer = self.serializer_class(
+                data={'image': image_file},
+                context={'request': request}  # Add this line
+            )
+            
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error processing image: {str(e)}")
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 

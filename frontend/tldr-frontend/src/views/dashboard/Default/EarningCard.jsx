@@ -24,8 +24,8 @@ export default function EarningCard({ videoRef }) {
   const canvasRef = React.useRef(document.createElement('canvas'));
 
   const captureImage = async () => {
-    if (!videoRef?.current) {
-      setSnackbarMessage('Camera not initialized');
+    if (!videoRef?.current || !videoRef.current.srcObject) {
+      setSnackbarMessage('Camera not initialized or no video stream available');
       setSnackbarSeverity('error');
       setOpenSnackbar(true);
       return;
@@ -36,22 +36,29 @@ export default function EarningCard({ videoRef }) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
 
+      // Wait for video metadata to be loaded
+      if (!video.videoWidth) {
+        await new Promise((resolve) => {
+          video.onloadedmetadata = resolve;
+        });
+      }
+
       // Set canvas size to match video dimensions
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth || video.clientWidth;
+      canvas.height = video.videoHeight || video.clientHeight;
 
       // Draw the current video frame
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // Convert to blob
-      const blob = await new Promise(resolve => 
-        canvas.toBlob(resolve, 'image/jpeg', 0.8)
+      const blob = await new Promise((resolve) => 
+        canvas.toBlob(resolve, 'image/jpeg', 0.95)
       );
 
       // Create form data
       const formData = new FormData();
-      formData.append('image', blob, 'screenshot.jpg');
+      formData.append('image', blob, `screenshot-${Date.now()}.jpg`);
 
       // Send to server
       const response = await fetch('http://localhost:8000/api/images/', {
@@ -59,13 +66,15 @@ export default function EarningCard({ videoRef }) {
         body: formData
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      if (!response.ok) throw new Error(`Upload failed: ${response.statusText}`);
 
+      const data = await response.json();
+      console.log('Screenshot uploaded:', data);
       setSnackbarMessage('Screenshot captured successfully!');
       setSnackbarSeverity('success');
     } catch (error) {
       console.error('Error:', error);
-      setSnackbarMessage('Failed to capture screenshot');
+      setSnackbarMessage(`Failed to capture screenshot: ${error.message}`);
       setSnackbarSeverity('error');
     } finally {
       setUploading(false);

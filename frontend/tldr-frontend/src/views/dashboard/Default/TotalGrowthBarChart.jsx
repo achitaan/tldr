@@ -9,6 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 // project imports
 import MainCard from '../../../ui-component/cards/MainCard';
+import EarningCard from './EarningCard';
 import { gridSpacing } from '../../../store/constant';
 
 export default function TotalGrowthBarChart({ isLoading: parentIsLoading }) {
@@ -30,16 +31,8 @@ export default function TotalGrowthBarChart({ isLoading: parentIsLoading }) {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-        // Add event listener for loadedmetadata instead of using play()
-        videoRef.current.onloadedmetadata = async () => {
-          try {
-            await videoRef.current?.play();
-            setIsLoading(false);
-          } catch (err) {
-            console.error('Play error:', err);
-            setError(err.message);
-          }
-        };
+        await videoRef.current.play();
+        setIsLoading(false);
       }
     } catch (err) {
       console.error('Camera error:', err);
@@ -61,79 +54,78 @@ export default function TotalGrowthBarChart({ isLoading: parentIsLoading }) {
   }, []);
 
   return (
-    <MainCard>
-      <Grid container spacing={gridSpacing}>
-        <Grid item xs={12}>
+    <>
+      <MainCard>
+        <Grid container spacing={gridSpacing}>
+          <Grid item xs={12}>
+          </Grid>
+          <Grid item xs={12}>
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              height: '600px',
+              backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5',
+              borderRadius: theme.shape.borderRadius,
+              overflow: 'hidden',
+              boxShadow: theme.shadows[5]
+            }}>
+              {(isLoading || parentIsLoading) && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 2
+                }}>
+                  <CircularProgress color="primary" />
+                </div>
+              )}
+              {error && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 2
+                }}>
+                  <Typography color="error">
+                    Camera Error: {error}
+                  </Typography>
+                </div>
+              )}
+              <video 
+                ref={videoRef}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transition: 'opacity 0.3s ease',
+                  opacity: isLoading ? 0 : 1
+                }}
+                playsInline
+                muted
+                autoPlay
+              />
+              <canvas 
+                id="output_video"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  display: 'none'
+                }}
+              />
+            </div>
+          </Grid>
         </Grid>
-        <Grid item xs={12}>
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: '600px',
-            backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5',
-            borderRadius: theme.shape.borderRadius,
-            overflow: 'hidden',
-            boxShadow: theme.shadows[5]
-          }}>
-            {(isLoading || parentIsLoading) && (
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 2
-              }}>
-                <CircularProgress color="primary" />
-              </div>
-            )}
-            {error && (
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 2
-              }}>
-                <Typography color="error">
-                  Camera Error: {error}
-                </Typography>
-              </div>
-            )}
-            <video 
-              ref={videoRef}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                transition: 'opacity 0.3s ease',
-                opacity: isLoading ? 0 : 1
-              }}
-              playsInline
-              muted
-              autoPlay
-            />
-            <canvas 
-              id="output_video"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                display: 'none'
-              }}
-            />
-          </div>
-        </Grid>
-      </Grid>
-    </MainCard>
+      </MainCard>
+      <EarningCard videoRef={videoRef} />
+    </>
   );
 }
 
 TotalGrowthBarChart.propTypes = {
   isLoading: PropTypes.bool
 };
-
-// In your parent component where both components are used
-<TotalGrowthBarChart />
-<EarningCard videoRef={videoRef} />
