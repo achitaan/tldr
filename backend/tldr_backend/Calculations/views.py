@@ -10,6 +10,7 @@ import logging
 import cv2
 import numpy as np
 from .image_processing import DetectText
+from .gpt_client import GPTClient
 
 from .models import cvImage
 from .serializers import cvImageSerializer
@@ -42,26 +43,29 @@ class cvImageList(generics.ListCreateAPIView):
             image_instance = cvImage(image=image_file)
             image_instance.save()
 
-            # Process the image
+            # Process the image and extract text
             detector = DetectText()
             result = detector.process_django_image(image_instance.image)
-
-            # Save the processed image
-            processed_image_name = f"processed_{image_file.name}"
-            with open(os.path.join(settings.MEDIA_ROOT, result['processed_image_path']), 'rb') as f:
-                image_instance.processed_image.save(processed_image_name, ContentFile(f.read()), save=False)
-
-            # Save the extracted text
+            
+            # Update instance with extracted text
             image_instance.extracted_text = result['extracted_text']
+            
+            # Process text with GPT
+            gpt_client = GPTClient()
+            gpt_response = gpt_client.get_response(result['extracted_text'])
+            image_instance.gpt_response = gpt_response
+            
+            # Save all updates
             image_instance.save()
 
-            # Return the response with context
+            # Return response with context
             serializer = self.serializer_class(
                 image_instance,
                 context={'request': request}
             )
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
         except Exception as e:
             logger.error(f"Error processing image: {str(e)}")
             return Response(

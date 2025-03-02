@@ -23,7 +23,7 @@ export default function TotalGrowthBarChart({ isLoading: parentIsLoading }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          width: { ideal: 1920 },
+          width: { ideal: 1920 },   
           height: { ideal: 1080 }
         } 
       });
