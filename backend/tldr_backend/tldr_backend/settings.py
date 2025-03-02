@@ -41,7 +41,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+INSTALLED_APPS += [
+    'corsheaders',
+]
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Add this at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -123,3 +128,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Add these settings at the bottom of the file
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Your Vite dev server
+]
+
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Create media directory if it doesn't exist
+MEDIA_ROOT.mkdir(exist_ok=True)

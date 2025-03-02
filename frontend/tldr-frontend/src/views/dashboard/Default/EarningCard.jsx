@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -10,6 +10,9 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import CameraIcon from '@mui/icons-material/Camera';
 
 // project imports
 import MainCard from '../../../ui-component/cards/MainCard';
@@ -23,11 +26,16 @@ import GetAppTwoToneIcon from '@mui/icons-material/GetAppOutlined';
 import FileCopyTwoToneIcon from '@mui/icons-material/FileCopyOutlined';
 import PictureAsPdfTwoToneIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import ArchiveTwoToneIcon from '@mui/icons-material/ArchiveOutlined';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 export default function EarningCard({ isLoading }) {
   const theme = useTheme();
 
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -35,6 +43,77 @@ export default function EarningCard({ isLoading }) {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/images/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      console.log('Upload successful:', data);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const captureImage = async () => {
+    if (!videoRef.current) return;
+
+    setUploading(true);
+    try {
+      // Create canvas if it doesn't exist
+      if (!canvasRef.current) {
+        canvasRef.current = document.createElement('canvas');
+      }
+
+      // Set canvas dimensions to match video
+      canvasRef.current.width = videoRef.current.videoWidth;
+      canvasRef.current.height = videoRef.current.videoHeight;
+
+      // Draw current video frame to canvas
+      const context = canvasRef.current.getContext('2d');
+      context.drawImage(videoRef.current, 0, 0);
+
+      // Convert canvas to blob
+      const blob = await new Promise(resolve => 
+        canvasRef.current.toBlob(resolve, 'image/jpeg', 0.8)
+      );
+
+      // Create form data and append blob
+      const formData = new FormData();
+      formData.append('image', blob, 'screenshot.jpg');
+
+      // Send to server
+      const response = await fetch('http://localhost:8000/api/images/', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      console.log('Screenshot uploaded:', data);
+    } catch (error) {
+      console.error('Error capturing/uploading image:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -47,7 +126,7 @@ export default function EarningCard({ isLoading }) {
           content={false}
           aria-hidden={Boolean(anchorEl)}
           sx={{
-            bgcolor: 'secondary.dark',
+            bgcolor: theme.palette.mode === 'dark' ? 'secondary.dark' : 'secondary.light',
             color: '#fff',
             overflow: 'hidden',
             position: 'relative',
@@ -169,6 +248,59 @@ export default function EarningCard({ isLoading }) {
                   Total Earning
                 </Typography>
               </Grid>
+              <Grid item>
+                <Typography variant="h4" color="textPrimary">
+                  Upload Image
+                </Typography>
+              </Grid>
+              <Grid item>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleUpload}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                />
+                <Button
+                  variant="contained"
+                  startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  fullWidth
+                  sx={{
+                    bgcolor: theme.palette.primary.main,
+                    color: 'white',
+                    py: 1.5,
+                    '&:hover': {
+                      bgcolor: theme.palette.primary.dark
+                    }
+                  }}
+                >
+                  {uploading ? 'Uploading...' : 'Select Image'}
+                </Button>
+              </Grid>
+              <Grid item>
+                <Typography variant="h4" color="textPrimary" gutterBottom>
+                  Capture Screenshot
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <CameraIcon />}
+                  onClick={captureImage}
+                  disabled={uploading}
+                  fullWidth
+                  sx={{
+                    bgcolor: theme.palette.primary.main,
+                    color: 'white',
+                    py: 1.5,
+                    '&:hover': {
+                      bgcolor: theme.palette.primary.dark
+                    }
+                  }}
+                >
+                  {uploading ? 'Processing...' : 'Take Screenshot'}
+                </Button>
+              </Grid>
             </Grid>
           </Box>
         </MainCard>
@@ -177,4 +309,7 @@ export default function EarningCard({ isLoading }) {
   );
 }
 
-EarningCard.propTypes = { isLoading: PropTypes.bool };
+EarningCard.propTypes = { 
+  isLoading: PropTypes.bool,
+  videoRef: PropTypes.object // Add this to receive video ref from parent
+};
