@@ -137,6 +137,7 @@ CORS_ALLOWED_ORIGINS = [
 # Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+IMAGE_UPLOAD_PATH = 'images/'  # Add this line
 
 # Create media directory if it doesn't exist
 MEDIA_ROOT.mkdir(exist_ok=True)

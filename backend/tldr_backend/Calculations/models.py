@@ -1,11 +1,11 @@
 from django.db import models
 
-# Create your models here.
-
 class cvImage(models.Model):
-    name = models.CharField(max_length=100, blank=True, default='')
     image = models.ImageField(upload_to='images/')
-    time = models.TimeField(auto_now_add=True)
+    processed_image = models.ImageField(upload_to='processed/', null=True, blank=True)
+    extracted_text = models.TextField(blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    # Add any other fields you need
 
     def __str__(self):
         return f"{self.name} ({self.time})"
