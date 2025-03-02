@@ -31,6 +31,10 @@ export default function TotalGrowthBarChart({ isLoading: parentIsLoading }) {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        // Wait for loadedmetadata before playing
+        await new Promise((resolve) => {
+          videoRef.current.onloadedmetadata = resolve;
+        });
         await videoRef.current.play();
         setIsLoading(false);
       }
