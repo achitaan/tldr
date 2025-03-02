@@ -1,101 +1,55 @@
 import PropTypes from 'prop-types';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
-import Avatar from '@mui/material/Avatar';
-import CardMedia from '@mui/material/CardMedia';
-import Grid from '@mui/material/Grid2';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
 import CameraIcon from '@mui/icons-material/Camera';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 
 // project imports
 import MainCard from '../../../ui-component/cards/MainCard';
-import SkeletonEarningCard from '../../../ui-component/cards/Skeleton/EarningCard';
 
-// assets
-import EarningIcon from '../../../assets/images/icons/earning.svg';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import GetAppTwoToneIcon from '@mui/icons-material/GetAppOutlined';
-import FileCopyTwoToneIcon from '@mui/icons-material/FileCopyOutlined';
-import PictureAsPdfTwoToneIcon from '@mui/icons-material/PictureAsPdfOutlined';
-import ArchiveTwoToneIcon from '@mui/icons-material/ArchiveOutlined';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-
-export default function EarningCard({ isLoading }) {
+export default function EarningCard({ videoRef }) {
   const theme = useTheme();
-
-  const [anchorEl, setAnchorEl] = React.useState(null);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = React.useRef(null);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const response = await fetch('http://localhost:8000/api/images/', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const data = await response.json();
-      console.log('Upload successful:', data);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    } finally {
-      setUploading(false);
-    }
-  };
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const canvasRef = React.useRef(document.createElement('canvas'));
 
   const captureImage = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef?.current) {
+      setSnackbarMessage('Camera not initialized');
+      setSnackbarSeverity('error');
+      setOpenSnackbar(true);
+      return;
+    }
 
     setUploading(true);
     try {
-      // Create canvas if it doesn't exist
-      if (!canvasRef.current) {
-        canvasRef.current = document.createElement('canvas');
-      }
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
 
-      // Set canvas dimensions to match video
-      canvasRef.current.width = videoRef.current.videoWidth;
-      canvasRef.current.height = videoRef.current.videoHeight;
+      // Set canvas size to match video dimensions
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-      // Draw current video frame to canvas
-      const context = canvasRef.current.getContext('2d');
-      context.drawImage(videoRef.current, 0, 0);
+      // Draw the current video frame
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Convert canvas to blob
+      // Convert to blob
       const blob = await new Promise(resolve => 
-        canvasRef.current.toBlob(resolve, 'image/jpeg', 0.8)
+        canvas.toBlob(resolve, 'image/jpeg', 0.8)
       );
 
-      // Create form data and append blob
+      // Create form data
       const formData = new FormData();
       formData.append('image', blob, 'screenshot.jpg');
 
@@ -107,209 +61,94 @@ export default function EarningCard({ isLoading }) {
 
       if (!response.ok) throw new Error('Upload failed');
 
-      const data = await response.json();
-      console.log('Screenshot uploaded:', data);
+      setSnackbarMessage('Screenshot captured successfully!');
+      setSnackbarSeverity('success');
     } catch (error) {
-      console.error('Error capturing/uploading image:', error);
+      console.error('Error:', error);
+      setSnackbarMessage('Failed to capture screenshot');
+      setSnackbarSeverity('error');
     } finally {
       setUploading(false);
+      setOpenSnackbar(true);
     }
   };
 
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setOpenSnackbar(false);
+  };
+
   return (
-    <>
-      {isLoading ? (
-        <SkeletonEarningCard />
-      ) : (
-        <MainCard
-          border={false}
-          content={false}
-          aria-hidden={Boolean(anchorEl)}
-          sx={{
-            bgcolor: theme.palette.mode === 'dark' ? 'secondary.dark' : 'secondary.light',
-            color: '#fff',
-            overflow: 'hidden',
-            position: 'relative',
-            '&:after': {
-              content: '""',
-              position: 'absolute',
-              width: 210,
-              height: 210,
-              background: theme.palette.secondary[800],
-              borderRadius: '50%',
-              top: { xs: -85 },
-              right: { xs: -95 }
-            },
-            '&:before': {
-              content: '""',
-              position: 'absolute',
-              width: 210,
-              height: 210,
-              background: theme.palette.secondary[800],
-              borderRadius: '50%',
-              top: { xs: -125 },
-              right: { xs: -15 },
-              opacity: 0.5
+    <MainCard
+      sx={{
+        bgcolor: theme.palette.mode === 'dark' ? 'secondary.dark' : 'secondary.light',
+        color: '#fff',
+        p: 0,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        transition: 'transform 0.2s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-3px)'
+        }
+      }}
+    >
+      <Box sx={{ p: 2.25 }}>
+        <Grid container direction="column" spacing={2}>
+          <Grid item>
+            <Typography variant="h4" sx={{ color: '#fff' }}>
+              Capture Screenshot
+            </Typography>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <CameraIcon />}
+              onClick={captureImage}
+              disabled={uploading}
+              fullWidth
+              sx={{
+                bgcolor: 'primary.main',
+                color: '#fff',
+                py: 1.5,
+                '&:hover': {
+                  bgcolor: 'primary.dark'
+                },
+                '&:disabled': {
+                  bgcolor: 'rgba(255,255,255,0.12)',
+                  color: 'rgba(255,255,255,0.3)'
+                }
+              }}
+            >
+              {uploading ? 'Processing...' : 'Take Screenshot'}
+            </Button>
+          </Grid>
+        </Grid>
+      </Box>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity}
+          sx={{ 
+            width: '100%',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            '& .MuiAlert-icon': {
+              fontSize: '1.5rem'
             }
           }}
         >
-          <Box sx={{ p: 2.25 }}>
-            <Grid container direction="column">
-              <Grid>
-                <Grid container sx={{ justifyContent: 'space-between' }}>
-                  <Grid>
-                    <Avatar
-                      variant="rounded"
-                      sx={{
-                        ...theme.typography.commonAvatar,
-                        ...theme.typography.largeAvatar,
-                        bgcolor: 'secondary.800',
-                        mt: 1
-                      }}
-                    >
-                      <CardMedia sx={{ width: 24, height: 24 }} component="img" src={EarningIcon} alt="Notification" />
-                    </Avatar>
-                  </Grid>
-                  <Grid>
-                    <Avatar
-                      variant="rounded"
-                      sx={{
-                        ...theme.typography.commonAvatar,
-                        ...theme.typography.mediumAvatar,
-                        bgcolor: 'secondary.dark',
-                        color: 'secondary.200',
-                        zIndex: 1
-                      }}
-                      aria-controls="menu-earning-card"
-                      aria-haspopup="true"
-                      onClick={handleClick}
-                    >
-                      <MoreHorizIcon fontSize="inherit" />
-                    </Avatar>
-                    <Menu
-                      id="menu-earning-card"
-                      anchorEl={anchorEl}
-                      keepMounted
-                      open={Boolean(anchorEl)}
-                      onClose={handleClose}
-                      variant="selectedMenu"
-                      anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right'
-                      }}
-                      transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'right'
-                      }}
-                    >
-                      <MenuItem onClick={handleClose}>
-                        <GetAppTwoToneIcon sx={{ mr: 1.75 }} /> Import Card
-                      </MenuItem>
-                      <MenuItem onClick={handleClose}>
-                        <FileCopyTwoToneIcon sx={{ mr: 1.75 }} /> Copy Data
-                      </MenuItem>
-                      <MenuItem onClick={handleClose}>
-                        <PictureAsPdfTwoToneIcon sx={{ mr: 1.75 }} /> Export
-                      </MenuItem>
-                      <MenuItem onClick={handleClose}>
-                        <ArchiveTwoToneIcon sx={{ mr: 1.75 }} /> Archive File
-                      </MenuItem>
-                    </Menu>
-                  </Grid>
-                </Grid>
-              </Grid>
-              <Grid>
-                <Grid container sx={{ alignItems: 'center' }}>
-                  <Grid>
-                    <Typography sx={{ fontSize: '2.125rem', fontWeight: 500, mr: 1, mt: 1.75, mb: 0.75 }}>$500.00</Typography>
-                  </Grid>
-                  <Grid>
-                    <Avatar
-                      sx={{
-                        cursor: 'pointer',
-                        ...theme.typography.smallAvatar,
-                        bgcolor: 'secondary.200',
-                        color: 'secondary.dark'
-                      }}
-                    >
-                      <ArrowUpwardIcon fontSize="inherit" sx={{ transform: 'rotate3d(1, 1, 1, 45deg)' }} />
-                    </Avatar>
-                  </Grid>
-                </Grid>
-              </Grid>
-              <Grid sx={{ mb: 1.25 }}>
-                <Typography
-                  sx={{
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    color: 'secondary.200'
-                  }}
-                >
-                  Total Earning
-                </Typography>
-              </Grid>
-              <Grid item>
-                <Typography variant="h4" color="textPrimary">
-                  Upload Image
-                </Typography>
-              </Grid>
-              <Grid item>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleUpload}
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  fullWidth
-                  sx={{
-                    bgcolor: theme.palette.primary.main,
-                    color: 'white',
-                    py: 1.5,
-                    '&:hover': {
-                      bgcolor: theme.palette.primary.dark
-                    }
-                  }}
-                >
-                  {uploading ? 'Uploading...' : 'Select Image'}
-                </Button>
-              </Grid>
-              <Grid item>
-                <Typography variant="h4" color="textPrimary" gutterBottom>
-                  Capture Screenshot
-                </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <CameraIcon />}
-                  onClick={captureImage}
-                  disabled={uploading}
-                  fullWidth
-                  sx={{
-                    bgcolor: theme.palette.primary.main,
-                    color: 'white',
-                    py: 1.5,
-                    '&:hover': {
-                      bgcolor: theme.palette.primary.dark
-                    }
-                  }}
-                >
-                  {uploading ? 'Processing...' : 'Take Screenshot'}
-                </Button>
-              </Grid>
-            </Grid>
-          </Box>
-        </MainCard>
-      )}
-    </>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </MainCard>
   );
 }
 
-EarningCard.propTypes = { 
-  isLoading: PropTypes.bool,
-  videoRef: PropTypes.object // Add this to receive video ref from parent
+EarningCard.propTypes = {
+  videoRef: PropTypes.shape({
+    current: PropTypes.instanceOf(Element)
+  }).isRequired
 };

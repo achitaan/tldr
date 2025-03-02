@@ -133,3 +133,7 @@ export default function TotalGrowthBarChart({ isLoading: parentIsLoading }) {
 TotalGrowthBarChart.propTypes = {
   isLoading: PropTypes.bool
 };
+
+// In your parent component where both components are used
+<TotalGrowthBarChart />
+<EarningCard videoRef={videoRef} />
