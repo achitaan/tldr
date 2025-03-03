@@ -21,64 +21,76 @@ export default function EarningCard({ videoRef }) {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [gptResponse, setGptResponse] = useState('');
   const canvasRef = React.useRef(document.createElement('canvas'));
 
   const captureImage = async () => {
-    if (!videoRef?.current || !videoRef.current.srcObject) {
-      setSnackbarMessage('Camera not initialized or no video stream available');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
-      return;
+    if (!videoRef?.current?.srcObject) {
+        setSnackbarMessage('Camera not initialized');
+        setSnackbarSeverity('error');
+        setOpenSnackbar(true);
+        return;
     }
 
     setUploading(true);
     try {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
 
-      // Wait for video metadata to be loaded
-      if (!video.videoWidth) {
-        await new Promise((resolve) => {
-          video.onloadedmetadata = resolve;
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw the current video frame
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert to blob
+        const blob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, 'image/jpeg', 0.95);
         });
-      }
 
-      // Set canvas size to match video dimensions
-      canvas.width = video.videoWidth || video.clientWidth;
-      canvas.height = video.videoHeight || video.clientHeight;
+        if (!blob) {
+            throw new Error('Failed to capture image');
+        }
 
-      // Draw the current video frame
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Create form data
+        const formData = new FormData();
+        formData.append('image', blob, `screenshot-${Date.now()}.jpg`);
 
-      // Convert to blob
-      const blob = await new Promise((resolve) => 
-        canvas.toBlob(resolve, 'image/jpeg', 0.95)
-      );
+        // Send to server
+        const response = await fetch('http://localhost:8000/api/images/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+            },
+            // Add these options for better error handling
+            mode: 'cors',
+            credentials: 'include',
+        });
 
-      // Create form data
-      const formData = new FormData();
-      formData.append('image', blob, `screenshot-${Date.now()}.jpg`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+        }
 
-      // Send to server
-      const response = await fetch('http://localhost:8000/api/images/', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) throw new Error(`Upload failed: ${response.statusText}`);
-
-      const data = await response.json();
-      console.log('Screenshot uploaded:', data);
-      setSnackbarMessage('Screenshot captured successfully!');
-      setSnackbarSeverity('success');
+        const data = await response.json();
+        console.log('Screenshot uploaded:', data);
+        setGptResponse(data.gpt_response);
+        setSnackbarMessage('Screenshot processed successfully!');
+        setSnackbarSeverity('success');
     } catch (error) {
-      console.error('Error:', error);
-      setSnackbarMessage(`Failed to capture screenshot: ${error.message}`);
-      setSnackbarSeverity('error');
+        console.error('Error:', error);
+        setSnackbarMessage(
+            error.message === 'Failed to fetch' 
+                ? 'Server is not running. Please start the backend server.' 
+                : error.message
+        );
+        setSnackbarSeverity('error');
     } finally {
-      setUploading(false);
-      setOpenSnackbar(true);
+        setUploading(false);
+        setOpenSnackbar(true);
     }
   };
 
@@ -130,6 +142,23 @@ export default function EarningCard({ videoRef }) {
               {uploading ? 'Processing...' : 'Take Screenshot'}
             </Button>
           </Grid>
+          {gptResponse && (
+            <Grid item>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: '#fff',
+                  bgcolor: 'rgba(0,0,0,0.1)',
+                  p: 2,
+                  borderRadius: 1,
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                }}
+              >
+                {gptResponse}
+              </Typography>
+            </Grid>
+          )}
         </Grid>
       </Box>
       <Snackbar
