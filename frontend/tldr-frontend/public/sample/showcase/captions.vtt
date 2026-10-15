@@ -1,0 +1,141 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:02.709
+A processor asks memory for a number.
+
+2
+00:00:02.709 --> 00:00:05.739
+Why can it not just take the answer immediately?
+
+3
+00:00:05.739 --> 00:00:12.304
+Let us slow one read down, and follow two numbers that look similar but mean very different things.
+
+4
+00:00:12.400 --> 00:00:14.427
+The first number is sixteen.
+
+5
+00:00:14.427 --> 00:00:18.053
+Think of it as a location, like a numbered slot.
+
+6
+00:00:18.053 --> 00:00:22.149
+The second number is forty two: the value stored in that slot.
+
+7
+00:00:22.149 --> 00:00:23.984
+An address answers where.
+
+8
+00:00:23.984 --> 00:00:26.181
+The stored value answers what.
+
+9
+00:00:26.300 --> 00:00:29.457
+The processor puts sixteen on the address lines.
+
+10
+00:00:29.457 --> 00:00:32.593
+Follow that selection into the memory table.
+
+11
+00:00:32.593 --> 00:00:36.196
+It picks one row, and that row contains forty two.
+
+12
+00:00:36.196 --> 00:00:42.211
+Changing the address would select a different row, not change the number inside this row.
+
+13
+00:00:42.300 --> 00:00:46.787
+But selecting a row and receiving its contents are separate events.
+
+14
+00:00:46.787 --> 00:00:53.974
+In our teaching model, the data lines still show an old value, nineteen, while memory prepares the answer.
+
+15
+00:00:53.974 --> 00:00:55.894
+Those lines carry a number.
+
+16
+00:00:55.894 --> 00:00:58.902
+That alone does not make it the right number.
+
+17
+00:00:59.000 --> 00:01:00.856
+Imagine sampling now.
+
+18
+00:01:00.856 --> 00:01:07.937
+The processor would capture nineteen, even though we asked for location sixteen and expected forty two.
+
+19
+00:01:07.937 --> 00:01:10.305
+The mistake is not arithmetic.
+
+20
+00:01:10.305 --> 00:01:14.912
+We have confused a value that is present with a value that is ready.
+
+21
+00:01:15.000 --> 00:01:20.013
+Now memory presents forty two and indicates that the data is valid.
+
+22
+00:01:20.013 --> 00:01:25.475
+Under this model's rules, the processor samples only after that indication.
+
+23
+00:01:25.475 --> 00:01:27.779
+The address stays sixteen throughout.
+
+24
+00:01:27.779 --> 00:01:31.754
+What changes is our permission to trust the returned data.
+
+25
+00:01:31.867 --> 00:01:35.365
+We can draw the same story as a timing diagram.
+
+26
+00:01:35.365 --> 00:01:37.520
+A read request comes first.
+
+27
+00:01:37.520 --> 00:01:39.589
+Data becomes valid later.
+
+28
+00:01:39.589 --> 00:01:42.768
+Sampling occurs inside that valid interval.
+
+29
+00:01:42.768 --> 00:01:50.737
+The traces share one time axis; they are three views of the same transaction, not three unrelated pictures.
+
+30
+00:01:50.833 --> 00:01:53.116
+So keep these questions separate.
+
+31
+00:01:53.116 --> 00:01:54.801
+Where should memory look?
+
+32
+00:01:54.801 --> 00:01:56.337
+That is the address.
+
+33
+00:01:56.337 --> 00:01:59.068
+When can the processor use the answer?
+
+34
+00:01:59.068 --> 00:02:01.095
+That is the validity rule.
+
+35
+00:02:01.095 --> 00:02:06.528
+The important idea is an agreement about when information becomes trustworthy.

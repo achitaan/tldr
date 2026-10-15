@@ -1,0 +1,48 @@
+# Connected motion for the ideal-read chapter
+
+This teaching revision is implemented and installed as revision ID 6, displayed as **Revision 4** in the lesson selector. A fresh independent Lane reviewer approved the bounded chapter with follow-ups and no remaining blocker. The user has deferred workspace redesign; this revision changes the explanation inside the video.
+
+## Concrete teaching change
+
+Keep the same processor, selected memory row and values from the opening visible while reading the original page-13 timing figure. A cursor follows the three numbered clock edges in the unmodified source image. The conceptual model changes at those same narration cues, making the figure's events observable actions.
+
+The source figure remains original pixels with separate overlays. The processor/memory model is labelled as an original logical illustration. Address 16, stored value 42 and prior register value 19 belong to that illustration; they are not numerical values asserted by the course figure. Token motion illustrates ordering, not electrical propagation time.
+
+| Existing narration cue | Original evidence | Visible action and invariant |
+| --- | --- | --- |
+| Start | Part Va page 13, complete figure | Restore the opening's processor and memory row, explicitly starting a new read with prior register value 19; the opening previously ended at 42. |
+| Sentence 3: first positive edge | Numbered event 1 | Move address 16 toward the selected memory row and mark the read request. Register remains 19. |
+| Sentence 5: address valid, data not yet valid | Address band before event 2 | Hold the returned-data path inactive. Ask the viewer to distinguish selection from completion. |
+| Sentences 6–7: negative edge and slave response | Numbered event 2, data-valid band | Highlight value 42 at the selected row, then show it on the return path. Register remains 19. |
+| Sentences 8–9: next positive edge and storage | Numbered event 3 | The cursor reaches the third edge at sentence 8 (48.45325 seconds); the register changes only at sentence 9's storage cue (51.84525 seconds). This distinction follows explanatory narration, not extra physical storage delay. |
+| Sentences 13–14: prediction and explanation | Existing practice point and final positive edge | Enter an explicit prediction replay, clearing the earlier completed register/cursor answer. Keep the new answer overlay hidden at the existing practice pause (84.174583 seconds); reveal at sentence 14 (86.674583 seconds). Keep the original source figure intact. |
+
+Use the existing narration and cue times, keeping the full lesson within its current 15:27.7 duration. Retain the complete source labels and a readable source view. Do not add text slides, filler silence or new protocol assumptions. The four-panel local storyboard at `artifacts/ece224-lesson/choreography-storyboard.svg` makes these states reviewable before implementation.
+
+## Implementation and verification packet
+
+Bound the change to the authored ideal-read chapter, its context export and a short render proof. Keep prior revisions immutable. Use stable identifiers for the source figure, clock cursor, processor register, selected row and returned-data path. Questions must retain the actual scene/time/object identifiers from the new revision.
+
+Verify logical state separately from drawing: the master register remains 19 before the final storage event, the selected address is 16, the selected memory value is 42, and storage produces 42 only at event 3. These are explicit original teaching inputs, not simulated hardware measurements. Preserve original source hashes, lesson duration, captions, practice behavior and cue alignment. Inspect actual rendered frames at all three events and verify the installed media in the browser. Human listening and learner feedback remain separate acceptance gates.
+
+The Lane packet uses one bounded routing assessment, one implementation worker chosen by that route and one fresh independent review. After the specific three-call increase was requested, the user explicitly instructed continuation; this is treated as authorization for that packet, increasing the allowance from ten to thirteen calls. Call eleven is the completed Astra/high routing assessment; call twelve is the implementation. Astra's initial `gpt-6.1-sol/high` selection was rejected by the installed routine-model allowlist before launch. The same routing packet reassessed to host-supported `gpt-5.6-sol/high`; wrapper validation passed and the implementation launch was accepted. The fresh reviewer selection is `gpt-6-astra/high` for call thirteen. The original ledger is retained; no global policy was changed and no external router, account or paid API was introduced. Runtime model settings remain unknown unless exposed by the host. Before-change source/media/narration evidence is saved under `artifacts/ece224-lesson/connected-motion-before`.
+
+## Implementation and preliminary review
+
+The first implementation passed seventeen authored tests and produced a 9.8-second silent proof. The fresh reviewer confirmed source-label preservation, the pre-storage register state and prediction clearing, but returned two blocking follow-ups within this bounded packet: the address arrow changed color without the planned token travel, and conceptual provenance was retained in the video manifest but stripped from the specification used for tutor questions. Both were corrected and independently rechecked: tokens now travel in both directions, and the specification retains illustrative-example wording plus the authored-notes reference beside the source figure.
+
+The corrected full clock chapter rendered at 106.933333 seconds. Actual decoded frames verified the return token beside event 2, register 19 before storage, 42 after storage, and prediction clearing/reveal. An initial reading of the scaled full-frame preview suggested text corruption and caused root to stop the remaining render. Native-pixel crops and independent implementation inspection disproved that reading: the memory value and complete footer are intact. No production change was made for that false alarm. The renderer resumed from its three valid completed chapter checkpoints. The diagnostic crops remain under `artifacts/ece224-lesson/connected-motion-{text,footer}-diagnostic.png`; complete chapter frames are `connected-motion-final-*`.
+
+The earlier short proof skipped event 6, so its return-motion frame could not establish event-2 cursor placement. The proof now derives all thirteen production events and rendered successfully as a 16.333-second silent 720p/30 fps clip. Its decoded return-motion frame confirms cursor 2 with the register still at 19. The actual full-chapter frames independently establish the same state and the later storage/prediction transitions.
+
+## Installed result and final review
+
+Open [the updated lesson](http://127.0.0.1:5173/?course=8&revision=6). The installed video remains 927.7 seconds, 1920×1080 at 30 fps, with eight chapters, 100 scenes, 153 caption cues and six practice points. Its SHA-256 is `6b3886d68f0159449e02b344079689ca62a6ceb54ea097b50d68912e62db16ff`. Revision ID 5 and its video are preserved.
+
+Seventeen authored timing, coordinate, logical-state, context and cache checks pass. The installation comparison confirms all ten source images and seven narration chapters unchanged, identical captions/transcript/cues/practice, and scene boundaries unchanged apart from floating-point rounding below 0.000000000001 seconds. All thirteen ideal-read scene contexts retain the five stable object identifiers, illustrative-example qualifiers and both original-source and authored-notes references in the actual specification used by contextual chat. That check made no provider request.
+
+The media/API verifier passed HTTP Range seeking, caption delivery, embedded captions and timeline checks without submitting generation. Twenty-one decoded audio comparisons passed, with maximum absolute offset 21.334 ms and minimum correlation 0.99828. The real browser loaded revision 6, naturally paused with the practice answer hidden at 323.208 seconds, revealed the explanation on request and resumed. Selecting the illustrated register and attaching the paused moment retained its scene/time context; no chat or follow-up was submitted. No media or console error was observed. Evidence is retained in `connected-motion-install-check.json`, `connected-motion-browser-check.json` and `connected-motion-workspace.png` under the ignored lesson artifact directory.
+
+The fresh reviewer independently reran seventeen tests, checked installed media/cache identities and preservation/context evidence, and inspected actual chapter frames. Both original blocking findings were resolved. Their final verdict was **approve with follow-ups** for revision 6's bounded chapter change. HTTP/browser evidence came from root's recorded live checks because the reviewer's sandbox blocked loopback sockets. All thirteen authorized Lane calls are complete; individual token counters remain unavailable.
+
+The resumed render reused three chapters and rendered four in 346.364 seconds, with 657,182,720 bytes peak sampled process-tree RSS. This excludes earlier interrupted work, narration and assembly. An unchanged rerun reused all seven in 0.224 seconds, with 47,136,768 bytes sampled RSS. These are single functional observations, not performance benchmarks. Full human listening, learner feedback, successful live AI answers/follow-up clips and equivalent 3Blue1Brown teaching quality remain unverified. No cloud request was made for this revision.

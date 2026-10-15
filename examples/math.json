@@ -1,0 +1,12 @@
+{
+  "id": "quadratic-demo", "title": "Reading a quadratic", "target_minutes": 10,
+  "chapters": [{"id": "quadratic", "title": "A worked example", "scenes": [{
+    "id": "square-function", "title": "Square the input", "source_refs": ["original-math-fixture"],
+    "narration": "For y equals x squared, multiply each input by itself. At x equals two, y equals four. At minus two the result is also four, because the product of two negative numbers is positive. These sampled points show the symmetry. The connected segments approximate a curve; they are not an exact symbolic drawing.",
+    "objects": [
+      {"id": "formula", "kind": "equation", "label": "A quadratic rule", "text": "y = x²;  x = 2  ⇒  y = 4", "latex": "y=x^2,\\quad x=2 \\Rightarrow y=4", "calculation": {"kind": "quadratic", "inputs": {"a": 1, "b": 0, "c": 0, "x": 2}}},
+      {"id": "samples", "kind": "plot", "label": "Explicit samples of y = x²", "points": [[-2,4],[-1,1],[0,0],[1,1],[2,4]]}
+    ],
+    "steps": [{"object_ids": ["formula"], "caption": "Substitute x = 2 into the rule."}, {"object_ids": ["samples"], "caption": "Opposite inputs have the same square."}]
+  }]}]
+}

@@ -1,0 +1,3 @@
+This is a simplified teaching bus, not an exact E C E two twenty four protocol. The processor places an address on the address bus. It then asserts a read request. The address identifies where to read; it is not the value being returned. Keep the address stable while the memory responds.
+
+Memory drives the data bus and signals that the value is valid. The processor samples forty two only after that indication. In eight bits, forty two is zero zero one zero one zero one zero. Sampling before data becomes valid can capture an old or unstable value. Finally, the processor releases the request and the transaction ends.

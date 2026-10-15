@@ -1,0 +1,9 @@
+{
+  "id": "geometry-demo", "title": "A geometric shape", "target_minutes": 10,
+  "chapters": [{"id": "shape", "title": "Boundary and interior", "scenes": [{
+    "id": "circle", "title": "The circle boundary", "source_refs": ["original-geometry-fixture"],
+    "narration": "A circle is the set of points at a fixed distance from its center. The line being drawn marks that boundary. The shaded interior is the disk. This picture illustrates the distinction; it does not measure the radius or establish a numerical area.",
+    "objects": [{"id": "circle-boundary", "kind": "geometry", "label": "Boundary versus interior", "shape": "circle"}],
+    "steps": [{"object_ids": ["circle-boundary"], "caption": "A circle is a boundary; its interior forms a disk."}]
+  }]}]
+}

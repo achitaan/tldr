@@ -1,0 +1,19 @@
+{
+  "id": "bus-read-demo", "title": "A pedagogical bus read", "target_minutes": 15,
+  "chapters": [{"id": "read-cycle", "title": "One read transaction", "scenes": [
+    {
+      "id": "request", "title": "The processor asks for a value",
+      "narration": "This is a simplified teaching bus, not an exact E C E two twenty four protocol. The processor places an address on the address bus. It then asserts a read request. The address identifies where to read; it is not the value being returned. Keep the address stable while the memory responds.",
+      "source_refs": ["original-bus-fixture"],
+      "objects": [{"id": "read-path", "kind": "bus", "label": "Read request: address 16", "nodes": ["Processor", "Memory"], "calculation": {"kind": "bus_read", "inputs": {"address": 16, "value": 42, "width": 8}}}],
+      "steps": [{"object_ids": ["read-path"], "caption": "1. Present address 16, then request a read."}]
+    },
+    {
+      "id": "sample", "title": "Sample only when data is valid",
+      "narration": "Memory drives the data bus and signals that the value is valid. The processor samples forty two only after that indication. In eight bits, forty two is zero zero one zero one zero one zero. Sampling before data becomes valid can capture an old or unstable value. Finally, the processor releases the request and the transaction ends.",
+      "source_refs": ["original-bus-fixture"],
+      "objects": [{"id": "handshake", "kind": "timing", "label": "Simplified read handshake", "signals": [{"name": "Read request", "values": [0,1,1,1,0,0]}, {"name": "Data valid", "values": [0,0,1,1,0,0]}, {"name": "Sample", "values": [0,0,0,1,0,0]}], "calculation": {"kind": "bus_read", "inputs": {"address": 16, "value": 42, "width": 8}}}],
+      "steps": [{"object_ids": ["handshake"], "caption": "2. Wait for valid data. 3. Sample. 4. Release."}]
+    }
+  ]}]
+}

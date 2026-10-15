@@ -1,0 +1,9 @@
+{
+  "id": "expression-demo", "title": "From gene to protein", "target_minutes": 15,
+  "chapters": [{"id": "expression", "title": "A conceptual sequence", "scenes": [{
+    "id": "gene-expression", "title": "Transcription and translation", "source_refs": ["original-biology-fixture"],
+    "narration": "This is a conceptual illustration of gene expression, not a molecular simulation. During transcription, a cell produces an R N A copy from a D N A template. During translation, a ribosome reads messenger R N A to assemble a chain of amino acids. The arrows summarize information flow and omit many regulatory steps. D N A does not turn into protein; its sequence provides instructions.",
+    "objects": [{"id": "flow", "kind": "process", "label": "Simplified information flow", "nodes": ["DNA", "RNA", "Protein"], "calculation": {"kind": "biology_concept", "inputs": {"concept": "transcription_translation"}}}],
+    "steps": [{"object_ids": ["flow"], "caption": "DNA → transcription → RNA → translation → protein"}]
+  }]}]
+}

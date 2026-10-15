@@ -1,0 +1,169 @@
+{
+  "format": "tldr-teaching-plan-design-example",
+  "format_version": 1,
+  "status": "draft-not-runtime-input",
+  "scope": "Proposed learning structure for the installed authored ECE224 lesson; not a scientific approval, learner assessment or renderer specification.",
+  "baseline": {
+    "lesson_id": "ece224-where-who-when",
+    "video_sha256": "6b3886d68f0159449e02b344079689ca62a6ceb54ea097b50d68912e62db16ff",
+    "course_source_digest": "b795febff84591aff468b4b6c14a8e67e5829f1f8b645f7ffc2f19d599098687",
+    "source": "ECE224 Part Va supplied locally; no private source images included in this example",
+    "local_revision_id_at_audit": 6,
+    "local_displayed_version_at_audit": 4
+  },
+  "assumed_prerequisites": [
+    {"id": "external-clock-basics", "meaning": "Recognize rising/falling clock edges and read a time axis. This was assumed by the original lesson, not verified about the learner."}
+  ],
+  "chapters": [
+    {
+      "chapter_id": "opening",
+      "goal_id": "goal-address-versus-value",
+      "goal": "Explain why choosing an address does not make the current bus value an accepted answer.",
+      "requires": [],
+      "source_pages": [],
+      "support": "Original labelled TLDR logical example, not a processor specification.",
+      "existing_practice_ids": [],
+      "later_practice_ids": ["predict-practice-0"],
+      "proposed_checks": [],
+      "invariant": "Keep location 16 distinct from returned value 42 and prior value 19."
+    },
+    {
+      "chapter_id": "ownership",
+      "goal_id": "goal-read-ownership",
+      "goal": "Identify the address driver and data driver in the displayed memory read, with arbitration already settled.",
+      "requires": ["goal-address-versus-value"],
+      "source_pages": [5],
+      "support": "Original course diagram and reviewed authored explanation.",
+      "existing_practice_ids": ["ownership-practice-0"],
+      "later_practice_ids": [],
+      "proposed_checks": [],
+      "invariant": "Bidirectional connections do not imply simultaneous driving by all devices."
+    },
+    {
+      "chapter_id": "ideal",
+      "goal_id": "goal-ideal-sequence",
+      "goal": "Read this course's three-event ideal synchronous sequence and distinguish selected, available and stored.",
+      "requires": ["goal-read-ownership", "external-clock-basics"],
+      "source_pages": [13],
+      "support": "Original page-13 timing figure plus separately labelled logical values.",
+      "existing_practice_ids": ["ideal-practice-0"],
+      "later_practice_ids": [],
+      "proposed_checks": ["check-band-meaning"],
+      "invariant": "The illustrative MDR stays 19 during return and changes to 42 at the explicit storage explanation; token travel is not propagation simulation."
+    },
+    {
+      "chapter_id": "propagation",
+      "goal_id": "goal-receiving-endpoint",
+      "goal": "Choose the receiving endpoint before reasoning about when an address or returned value is valid.",
+      "requires": ["goal-ideal-sequence"],
+      "source_pages": [19, 22],
+      "support": "Original course endpoint diagrams; do not silently combine sending and receiving rows.",
+      "existing_practice_ids": [],
+      "later_practice_ids": [],
+      "proposed_checks": ["check-receiving-endpoint"],
+      "invariant": "Validity at the producing slave is not automatically validity at the receiving master."
+    },
+    {
+      "chapter_id": "window",
+      "goal_id": "goal-setup-hold",
+      "goal": "Check both receiving-register interval boundaries and identify whether setup, hold or neither fails.",
+      "requires": ["goal-receiving-endpoint"],
+      "source_pages": [22, 24],
+      "support": "Course requirements plus separate exact interval-containment examples; not device specifications.",
+      "existing_practice_ids": [],
+      "later_practice_ids": ["predict-practice-1"],
+      "proposed_checks": ["check-setup-failure", "check-hold-failure"],
+      "invariant": "A setup pass cannot compensate for a hold failure, or vice versa."
+    },
+    {
+      "chapter_id": "handshake",
+      "goal_id": "goal-interlocked-order",
+      "goal": "Explain which earlier event permits each next action in the displayed fully interlocked read.",
+      "requires": ["goal-read-ownership", "goal-ideal-sequence"],
+      "source_pages": [34, 35],
+      "support": "First read transaction in the course figure; the neighboring write is a separate case.",
+      "existing_practice_ids": ["handshake-practice-0"],
+      "later_practice_ids": ["predict-practice-2"],
+      "proposed_checks": [],
+      "invariant": "Distinguish data capture at the master from return of the whole protocol to its inactive state."
+    },
+    {
+      "chapter_id": "async-delays",
+      "goal_id": "goal-delayed-acknowledgement",
+      "goal": "Explain why address/control and returned data cannot be released merely because a local ready edge changed.",
+      "requires": ["goal-receiving-endpoint", "goal-setup-hold", "goal-interlocked-order"],
+      "source_pages": [37, 38, 40],
+      "support": "Course endpoint ordering and hold diagrams; no invented delay values.",
+      "existing_practice_ids": [],
+      "later_practice_ids": [],
+      "proposed_checks": ["check-address-release"],
+      "invariant": "Acknowledgement-based sequencing still needs receiving-side ordering and stable-data constraints."
+    },
+    {
+      "chapter_id": "predict",
+      "goal_id": "goal-explain-and-transfer",
+      "goal": "Give a reason for each address/value, stable-window and handshake decision, then apply the rules to a changed example.",
+      "requires": ["goal-address-versus-value", "goal-read-ownership", "goal-ideal-sequence", "goal-receiving-endpoint", "goal-setup-hold", "goal-interlocked-order", "goal-delayed-acknowledgement"],
+      "source_pages": [35],
+      "support": "Installed recall questions plus original labelled numerical examples. Changed-example checks below remain proposed.",
+      "existing_practice_ids": ["predict-practice-0", "predict-practice-1", "predict-practice-2"],
+      "later_practice_ids": [],
+      "proposed_checks": [],
+      "invariant": "Revealing the explanation does not count as a correct unassisted answer."
+    }
+  ],
+  "proposed_checks": [
+    {
+      "id": "check-band-meaning",
+      "goal_id": "goal-ideal-sequence",
+      "status": "proposed-not-installed",
+      "question": "Does a band labelled valid data mean every data bit is one?",
+      "expected_reasoning": "No. It denotes an interval in which the multi-bit value is valid, not a requirement that all bits are one.",
+      "support": "Existing ideal chapter sentences 10-12 and original page 13.",
+      "teaching_change": "Introduce the multi-wire band convention before using it to explain the transfer."
+    },
+    {
+      "id": "check-receiving-endpoint",
+      "goal_id": "goal-receiving-endpoint",
+      "status": "proposed-not-installed",
+      "question": "For returned read data, which endpoint must satisfy the sampling requirement, and why is the slave's local validity insufficient?",
+      "expected_reasoning": "The receiving master. The returned value still travels through the slave driver and bus before reaching it.",
+      "support": "Existing propagation chapter and original pages 19/22.",
+      "teaching_change": "Turn the existing spoken pause request into a deliberate player pause without showing the answer."
+    },
+    {
+      "id": "check-setup-failure",
+      "goal_id": "goal-setup-hold",
+      "status": "proposed-not-installed",
+      "question": "In a separate interval example, sample at 12 ns with setup 1.5 ns and hold 0.5 ns. Actual validity is [10.75, 13] ns. Which requirement fails?",
+      "calculation": {"tool": "examples/showcase/timing_math.py:timing_window", "inputs": [12, 1.5, 0.5, 10.75, 13], "expected_setup_margin": -0.25, "expected_hold_margin": 0.5, "expected_passes": false},
+      "expected_reasoning": "Required validity is [10.5, 12.5] ns. Setup misses by 0.25 ns; hold passes with 0.5 ns margin.",
+      "support": "Derived interval containment with explicit illustrative values; not course device measurements."
+    },
+    {
+      "id": "check-hold-failure",
+      "goal_id": "goal-setup-hold",
+      "status": "proposed-not-installed",
+      "question": "Keep that 12 ns sample and its setup/hold requirements. Actual validity is now [10, 12.25] ns. Which requirement fails?",
+      "calculation": {"tool": "examples/showcase/timing_math.py:timing_window", "inputs": [12, 1.5, 0.5, 10, 12.25], "expected_setup_margin": 0.5, "expected_hold_margin": -0.25, "expected_passes": false},
+      "expected_reasoning": "Setup passes with 0.5 ns margin; data changes 0.25 ns before the hold boundary, so hold fails.",
+      "support": "Derived interval containment with explicit illustrative values; not course device measurements."
+    },
+    {
+      "id": "check-address-release",
+      "goal_id": "goal-delayed-acknowledgement",
+      "status": "proposed-not-installed",
+      "question": "In the displayed delayed fully interlocked read, why does the master retain address/control after locally deasserting Master Ready?",
+      "expected_reasoning": "The slave must observe inactive ready before the selection can change; local deassertion does not establish remote arrival order.",
+      "support": "Existing async-delays chapter and original page 38.",
+      "teaching_change": "Ask about receiving-side order, rather than repeating only the ideal four-event sequence."
+    }
+  ],
+  "review_limits": [
+    "This is a manually prepared draft mapping; the application neither loads nor enforces it.",
+    "Matching hashes and valid references do not establish claim entailment or learning efficacy.",
+    "The new questions and answers need content/teaching review before installation.",
+    "Human audio listening and delayed unassisted learner evaluation remain open.",
+    "There is no automatic grading, mastery inference or review schedule in this example."
+  ]
+}

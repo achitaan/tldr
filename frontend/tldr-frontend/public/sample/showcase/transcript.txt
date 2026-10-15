@@ -1,0 +1,15 @@
+A processor asks memory for a number. Why can it not just take the answer immediately? Let us slow one read down, and follow two numbers that look similar but mean very different things.
+
+The first number is sixteen. Think of it as a location, like a numbered slot. The second number is forty two: the value stored in that slot. An address answers where. The stored value answers what.
+
+The processor puts sixteen on the address lines. Follow that selection into the memory table. It picks one row, and that row contains forty two. Changing the address would select a different row, not change the number inside this row.
+
+But selecting a row and receiving its contents are separate events. In our teaching model, the data lines still show an old value, nineteen, while memory prepares the answer. Those lines carry a number. That alone does not make it the right number.
+
+Imagine sampling now. The processor would capture nineteen, even though we asked for location sixteen and expected forty two. The mistake is not arithmetic. We have confused a value that is present with a value that is ready.
+
+Now memory presents forty two and indicates that the data is valid. Under this model's rules, the processor samples only after that indication. The address stays sixteen throughout. What changes is our permission to trust the returned data.
+
+We can draw the same story as a timing diagram. A read request comes first. Data becomes valid later. Sampling occurs inside that valid interval. The traces share one time axis; they are three views of the same transaction, not three unrelated pictures.
+
+So keep these questions separate. Where should memory look? That is the address. When can the processor use the answer? That is the validity rule. The important idea is an agreement about when information becomes trustworthy.

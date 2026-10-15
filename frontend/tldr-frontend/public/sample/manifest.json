@@ -1,0 +1,168 @@
+{
+  "lesson_id": "bus-read-demo",
+  "title": "A pedagogical bus read",
+  "target_minutes": 15,
+  "duration_seconds": 45.481,
+  "video": "bus.mp4",
+  "captions": "captions.vtt",
+  "transcript": "transcript.txt",
+  "poster": "poster.jpg",
+  "chapters": [
+    {
+      "id": "read-cycle",
+      "title": "One read transaction",
+      "objective": "",
+      "start_seconds": 0.0,
+      "end_seconds": 45.36
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "request",
+      "chapter_id": "read-cycle",
+      "title": "The processor asks for a value",
+      "start_seconds": 0.0,
+      "end_seconds": 20.905,
+      "source_refs": [
+        "original-bus-fixture"
+      ],
+      "objects": [
+        {
+          "id": "read-path",
+          "kind": "bus",
+          "label": "Read request: address 16",
+          "calculation_result": {
+            "address": 16,
+            "sampled_value": 42,
+            "bits": "00101010",
+            "phases": [
+              "address",
+              "read_request",
+              "data_valid",
+              "sample",
+              "release"
+            ],
+            "verification": "pedagogical handshake, not a specific processor protocol"
+          }
+        }
+      ],
+      "cache_key": "741c0721eccc629fac45f85c0156dc0e1adbfde2c4c33a4e5d7e7f15a27169bb",
+      "narration": "This is a simplified teaching bus, not an exact E C E two twenty four protocol. The processor places an address on the address bus. It then asserts a read request. The address identifies where to read; it is not the value being returned. Keep the address stable while the memory responds."
+    },
+    {
+      "scene_id": "sample",
+      "chapter_id": "read-cycle",
+      "title": "Sample only when data is valid",
+      "start_seconds": 20.905,
+      "end_seconds": 45.36,
+      "source_refs": [
+        "original-bus-fixture"
+      ],
+      "objects": [
+        {
+          "id": "handshake",
+          "kind": "timing",
+          "label": "Simplified read handshake",
+          "calculation_result": {
+            "address": 16,
+            "sampled_value": 42,
+            "bits": "00101010",
+            "phases": [
+              "address",
+              "read_request",
+              "data_valid",
+              "sample",
+              "release"
+            ],
+            "verification": "pedagogical handshake, not a specific processor protocol"
+          }
+        }
+      ],
+      "cache_key": "58d15d29bfae10739902a0f315fd7c445731158552d3bc4eca96acdb2ea37175",
+      "narration": "Memory drives the data bus and signals that the value is valid. The processor samples forty two only after that indication. In eight bits, forty two is zero zero one zero one zero one zero. Sampling before data becomes valid can capture an old or unstable value. Finally, the processor releases the request and the transaction ends."
+    }
+  ],
+  "cues": [
+    {
+      "start_seconds": 0.0,
+      "end_seconds": 6.255,
+      "text": "This is a simplified teaching bus, not an exact E C E two twenty four protocol.",
+      "scene_id": "request"
+    },
+    {
+      "start_seconds": 6.255,
+      "end_seconds": 9.94,
+      "text": "The processor places an address on the address bus.",
+      "scene_id": "request"
+    },
+    {
+      "start_seconds": 9.94,
+      "end_seconds": 12.455,
+      "text": "It then asserts a read request.",
+      "scene_id": "request"
+    },
+    {
+      "start_seconds": 12.455,
+      "end_seconds": 17.55,
+      "text": "The address identifies where to read; it is not the value being returned.",
+      "scene_id": "request"
+    },
+    {
+      "start_seconds": 17.55,
+      "end_seconds": 20.905,
+      "text": "Keep the address stable while the memory responds.",
+      "scene_id": "request"
+    },
+    {
+      "start_seconds": 20.905,
+      "end_seconds": 25.385,
+      "text": "Memory drives the data bus and signals that the value is valid.",
+      "scene_id": "sample"
+    },
+    {
+      "start_seconds": 25.385,
+      "end_seconds": 29.755000000000003,
+      "text": "The processor samples forty two only after that indication.",
+      "scene_id": "sample"
+    },
+    {
+      "start_seconds": 29.755000000000003,
+      "end_seconds": 35.22,
+      "text": "In eight bits, forty two is zero zero one zero one zero one zero.",
+      "scene_id": "sample"
+    },
+    {
+      "start_seconds": 35.22,
+      "end_seconds": 40.45,
+      "text": "Sampling before data becomes valid can capture an old or unstable value.",
+      "scene_id": "sample"
+    },
+    {
+      "start_seconds": 40.45,
+      "end_seconds": 45.36,
+      "text": "Finally, the processor releases the request and the transaction ends.",
+      "scene_id": "sample"
+    }
+  ],
+  "caption_alignment": "System.Speech word audio positions",
+  "warnings": [
+    "Actual narration is 0.8 minutes; requested 15. Expand or shorten the substantive script; no artificial padding was added."
+  ],
+  "versions": {
+    "manim": "0.19.0",
+    "av": "13.1.0",
+    "imageio-ffmpeg": "0.6.0",
+    "renderer": "tldr-controlled-2",
+    "python": "3.10.4",
+    "platform": "Windows-10-10.0.26300-SP0"
+  },
+  "configuration": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "voice": "System.Speech default",
+    "rate": 0
+  },
+  "cache_hits": 0,
+  "render_elapsed_seconds": 52.155999999988126
+}

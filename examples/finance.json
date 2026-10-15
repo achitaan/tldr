@@ -1,0 +1,9 @@
+{
+  "id": "compound-demo", "title": "How interest compounds", "target_minutes": 15,
+  "chapters": [{"id": "growth", "title": "Fixed-rate teaching example", "scenes": [{
+    "id": "annual-growth", "title": "Interest earns interest", "source_refs": ["original-finance-fixture"],
+    "narration": "Start with one thousand units of currency and an assumed fixed annual interest rate of five percent. After one year the balance is one thousand fifty. After the second year it is one thousand one hundred two point five. The extra two point five comes from interest on the first year's interest. This simplified calculation excludes deposits, fees, taxes and inflation; it is not a forecast of investment returns.",
+    "objects": [{"id": "compound", "kind": "equation", "label": "Annual compounding; no additional cash flows", "text": "A = P(1 + r/n)^(nt)\nA = 1000 × 1.05² = 1102.50", "calculation": {"kind": "compound_interest", "inputs": {"principal": 1000, "annual_rate": 0.05, "periods_per_year": 1, "years": 2}}}],
+    "steps": [{"object_ids": ["compound"], "caption": "The second year applies interest to the entire first-year balance."}]
+  }]}]
+}

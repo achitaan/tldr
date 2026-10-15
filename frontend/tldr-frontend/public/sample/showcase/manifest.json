@@ -1,0 +1,541 @@
+{
+  "duration_seconds": 126.633333,
+  "warnings": [],
+  "scenes": [
+    {
+      "scene_id": "question",
+      "chapter_id": "opening",
+      "title": "The question",
+      "start_seconds": 0.0,
+      "end_seconds": 12.399999999999991,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "where",
+      "chapter_id": "opening",
+      "title": "Where and what",
+      "start_seconds": 12.399999999999991,
+      "end_seconds": 26.300000000000182,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        },
+        {
+          "id": "address-value",
+          "kind": "text",
+          "label": "Address 16 \u2014 where to look",
+          "text": "16"
+        },
+        {
+          "id": "data-value",
+          "kind": "text",
+          "label": "Old data 19 \u2014 not yet valid",
+          "text": "19"
+        }
+      ]
+    },
+    {
+      "scene_id": "address",
+      "chapter_id": "opening",
+      "title": "Selecting location 16",
+      "start_seconds": 26.300000000000182,
+      "end_seconds": 42.30000000000014,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        },
+        {
+          "id": "address-value",
+          "kind": "text",
+          "label": "Address 16 \u2014 where to look",
+          "text": "16"
+        },
+        {
+          "id": "data-value",
+          "kind": "text",
+          "label": "Old data 19 \u2014 not yet valid",
+          "text": "19"
+        }
+      ]
+    },
+    {
+      "scene_id": "waiting",
+      "chapter_id": "opening",
+      "title": "A value is not a promise",
+      "start_seconds": 42.30000000000014,
+      "end_seconds": 58.99999999999994,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        },
+        {
+          "id": "address-value",
+          "kind": "text",
+          "label": "Address 16 \u2014 where to look",
+          "text": "16"
+        },
+        {
+          "id": "data-value",
+          "kind": "text",
+          "label": "Old data 19 \u2014 not yet valid",
+          "text": "19"
+        }
+      ]
+    },
+    {
+      "scene_id": "early",
+      "chapter_id": "opening",
+      "title": "The early-sampling mistake",
+      "start_seconds": 58.99999999999994,
+      "end_seconds": 74.99999999999972,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        },
+        {
+          "id": "address-value",
+          "kind": "text",
+          "label": "Address 16 \u2014 where to look",
+          "text": "16"
+        },
+        {
+          "id": "data-value",
+          "kind": "text",
+          "label": "Old data 19 \u2014 not yet valid",
+          "text": "19"
+        }
+      ]
+    },
+    {
+      "scene_id": "ready",
+      "chapter_id": "opening",
+      "title": "Ready to trust the data",
+      "start_seconds": 74.99999999999972,
+      "end_seconds": 91.86666666666596,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        },
+        {
+          "id": "address-value",
+          "kind": "text",
+          "label": "Address 16 \u2014 where to look",
+          "text": "16"
+        },
+        {
+          "id": "data-value",
+          "kind": "text",
+          "label": "Valid data 42",
+          "text": "42"
+        }
+      ]
+    },
+    {
+      "scene_id": "timing",
+      "chapter_id": "opening",
+      "title": "One shared time axis",
+      "start_seconds": 91.86666666666596,
+      "end_seconds": 110.83333333333205,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        },
+        {
+          "id": "address-value",
+          "kind": "text",
+          "label": "Address 16 \u2014 where to look",
+          "text": "16"
+        },
+        {
+          "id": "data-value",
+          "kind": "text",
+          "label": "Valid data 42",
+          "text": "42"
+        },
+        {
+          "id": "shared-timing",
+          "kind": "timing",
+          "label": "Request, validity and sample on one time axis",
+          "signals": [
+            {
+              "name": "Request",
+              "values": [
+                0,
+                1,
+                1,
+                1,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "Valid",
+              "values": [
+                0,
+                0,
+                1,
+                1,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "Sample",
+              "values": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene_id": "takeaway",
+      "chapter_id": "opening",
+      "title": "Where versus when",
+      "start_seconds": 110.83333333333205,
+      "end_seconds": 126.63333333333178,
+      "source_refs": [
+        "ppage-why-wait"
+      ],
+      "objects": [
+        {
+          "id": "processor",
+          "kind": "bus",
+          "label": "Processor and selected memory row",
+          "nodes": [
+            "Processor",
+            "Memory"
+          ]
+        },
+        {
+          "id": "address-value",
+          "kind": "text",
+          "label": "Address 16 \u2014 where to look",
+          "text": "16"
+        },
+        {
+          "id": "data-value",
+          "kind": "text",
+          "label": "Valid data 42",
+          "text": "42"
+        },
+        {
+          "id": "shared-timing",
+          "kind": "timing",
+          "label": "Request, validity and sample on one time axis",
+          "signals": [
+            {
+              "name": "Request",
+              "values": [
+                0,
+                1,
+                1,
+                1,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "Valid",
+              "values": [
+                0,
+                0,
+                1,
+                1,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "Sample",
+              "values": [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "id": "opening",
+      "title": "Where versus when",
+      "start_seconds": 0,
+      "end_seconds": 126.633333
+    }
+  ],
+  "cues": [
+    {
+      "start_seconds": 0.0,
+      "end_seconds": 2.7093333333333334,
+      "text": "A processor asks memory for a number."
+    },
+    {
+      "start_seconds": 2.7093333333333334,
+      "end_seconds": 5.738666666666667,
+      "text": "Why can it not just take the answer immediately?"
+    },
+    {
+      "start_seconds": 5.738666666666667,
+      "end_seconds": 12.303958333333334,
+      "text": "Let us slow one read down, and follow two numbers that look similar but mean very different things."
+    },
+    {
+      "start_seconds": 12.399999999999991,
+      "end_seconds": 14.426666666666659,
+      "text": "The first number is sixteen."
+    },
+    {
+      "start_seconds": 14.426666666666659,
+      "end_seconds": 18.053333333333324,
+      "text": "Think of it as a location, like a numbered slot."
+    },
+    {
+      "start_seconds": 18.053333333333324,
+      "end_seconds": 22.149333333333324,
+      "text": "The second number is forty two: the value stored in that slot."
+    },
+    {
+      "start_seconds": 22.149333333333324,
+      "end_seconds": 23.98399999999999,
+      "text": "An address answers where."
+    },
+    {
+      "start_seconds": 23.98399999999999,
+      "end_seconds": 26.181333333333324,
+      "text": "The stored value answers what."
+    },
+    {
+      "start_seconds": 26.300000000000182,
+      "end_seconds": 29.457333333333516,
+      "text": "The processor puts sixteen on the address lines."
+    },
+    {
+      "start_seconds": 29.457333333333516,
+      "end_seconds": 32.59333333333352,
+      "text": "Follow that selection into the memory table."
+    },
+    {
+      "start_seconds": 32.59333333333352,
+      "end_seconds": 36.19600000000018,
+      "text": "It picks one row, and that row contains forty two."
+    },
+    {
+      "start_seconds": 36.19600000000018,
+      "end_seconds": 42.21062500000018,
+      "text": "Changing the address would select a different row, not change the number inside this row."
+    },
+    {
+      "start_seconds": 42.30000000000014,
+      "end_seconds": 46.7872916666668,
+      "text": "But selecting a row and receiving its contents are separate events."
+    },
+    {
+      "start_seconds": 46.7872916666668,
+      "end_seconds": 53.97395833333347,
+      "text": "In our teaching model, the data lines still show an old value, nineteen, while memory prepares the answer."
+    },
+    {
+      "start_seconds": 53.97395833333347,
+      "end_seconds": 55.89395833333347,
+      "text": "Those lines carry a number."
+    },
+    {
+      "start_seconds": 55.89395833333347,
+      "end_seconds": 58.90195833333347,
+      "text": "That alone does not make it the right number."
+    },
+    {
+      "start_seconds": 58.99999999999994,
+      "end_seconds": 60.855999999999945,
+      "text": "Imagine sampling now."
+    },
+    {
+      "start_seconds": 60.855999999999945,
+      "end_seconds": 67.93729166666661,
+      "text": "The processor would capture nineteen, even though we asked for location sixteen and expected forty two."
+    },
+    {
+      "start_seconds": 67.93729166666661,
+      "end_seconds": 70.3052916666666,
+      "text": "The mistake is not arithmetic."
+    },
+    {
+      "start_seconds": 70.3052916666666,
+      "end_seconds": 74.91191666666661,
+      "text": "We have confused a value that is present with a value that is ready."
+    },
+    {
+      "start_seconds": 74.99999999999972,
+      "end_seconds": 80.01333333333305,
+      "text": "Now memory presents forty two and indicates that the data is valid."
+    },
+    {
+      "start_seconds": 80.01333333333305,
+      "end_seconds": 85.47466666666638,
+      "text": "Under this model's rules, the processor samples only after that indication."
+    },
+    {
+      "start_seconds": 85.47466666666638,
+      "end_seconds": 87.77866666666638,
+      "text": "The address stays sixteen throughout."
+    },
+    {
+      "start_seconds": 87.77866666666638,
+      "end_seconds": 91.75395833333305,
+      "text": "What changes is our permission to trust the returned data."
+    },
+    {
+      "start_seconds": 91.86666666666596,
+      "end_seconds": 95.36533333333263,
+      "text": "We can draw the same story as a timing diagram."
+    },
+    {
+      "start_seconds": 95.36533333333263,
+      "end_seconds": 97.5199999999993,
+      "text": "A read request comes first."
+    },
+    {
+      "start_seconds": 97.5199999999993,
+      "end_seconds": 99.58933333333263,
+      "text": "Data becomes valid later."
+    },
+    {
+      "start_seconds": 99.58933333333263,
+      "end_seconds": 102.76799999999929,
+      "text": "Sampling occurs inside that valid interval."
+    },
+    {
+      "start_seconds": 102.76799999999929,
+      "end_seconds": 110.73729166666597,
+      "text": "The traces share one time axis; they are three views of the same transaction, not three unrelated pictures."
+    },
+    {
+      "start_seconds": 110.83333333333205,
+      "end_seconds": 113.11599999999872,
+      "text": "So keep these questions separate."
+    },
+    {
+      "start_seconds": 113.11599999999872,
+      "end_seconds": 114.80133333333205,
+      "text": "Where should memory look?"
+    },
+    {
+      "start_seconds": 114.80133333333205,
+      "end_seconds": 116.33733333333205,
+      "text": "That is the address."
+    },
+    {
+      "start_seconds": 116.33733333333205,
+      "end_seconds": 119.06799999999872,
+      "text": "When can the processor use the answer?"
+    },
+    {
+      "start_seconds": 119.06799999999872,
+      "end_seconds": 121.09466666666538,
+      "text": "That is the validity rule."
+    },
+    {
+      "start_seconds": 121.09466666666538,
+      "end_seconds": 126.52799999999871,
+      "text": "The important idea is an agreement about when information becomes trustworthy."
+    }
+  ],
+  "practice": [
+    {
+      "id": "why-wait-predict",
+      "scene_id": "question",
+      "time_seconds": 5.74,
+      "question": "Why should the processor wait before accepting memory data?",
+      "answer": "The data wires can still carry an old value. The receiving side needs the protocol\u2019s valid sampling condition before it accepts the returned data."
+    }
+  ],
+  "scope": "Original teaching model. Not a processor-specific bus protocol or an electrical simulation.",
+  "status": "Opening-sequence quality study; full visual lesson remains in progress.",
+  "caption_alignment": "independently synthesized sentence boundaries",
+  "narration_engine": "Kokoro ONNX 0.6.1 (local)",
+  "voice": "am_michael",
+  "model_hashes": {
+    "kokoro-v1.0.onnx": "beb0d1848dee9a49da392cc3df26958d46cfa35d321edf434f52949153f0df3a",
+    "voices-v1.0.bin": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d"
+  }
+}

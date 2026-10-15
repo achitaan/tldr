@@ -1,0 +1,558 @@
+{
+  "id": "bus-read-long",
+  "title": "Reasoning through a bus read",
+  "target_minutes": 15,
+  "chapters": [
+    {
+      "id": "chapter-1",
+      "title": "A small model of a bus",
+      "objective": "Separate the processor, memory and the agreement between them.",
+      "scenes": [
+        {
+          "id": "scene-1",
+          "title": "A small model of a bus",
+          "narration": "Imagine that a processor needs a number stored somewhere else. It cannot simply reach into memory. It has to communicate over a set of electrical connections, and both sides need an agreement about what the signals mean. That agreement is the protocol. In this lesson we use a deliberately simplified read handshake. It is a teaching model, not a claim about a particular Waterloo course, processor, or commercial bus. We will follow one request from beginning to end. The processor asks for the value at address sixteen. Memory eventually returns forty two. The interesting part is not those two numbers. It is how the processor knows which number it asked for, which device is allowed to drive each connection, and when the returned value can safely be sampled. Keep these three questions in mind: where, who, and when. The diagram will separate the roles before we combine them into a timing trace.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bus-0",
+              "kind": "bus",
+              "label": "Address 16 → value 42",
+              "nodes": [
+                "Processor",
+                "Memory"
+              ],
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bus-0"
+              ],
+              "caption": "Separate the processor, memory and the agreement between them."
+            }
+          ]
+        },
+        {
+          "id": "scene-2",
+          "title": "An address is not the returned value",
+          "narration": "Address sixteen and data forty two play different roles. Think of an address as the label on a storage location, while data is the content currently stored there. If someone changes the stored content tomorrow, the address can stay sixteen and the next read can return a different value. A common diagram-reading mistake is to treat every number on the page as the same kind of quantity. Before calculating anything, label each number with its role. Here, sixteen belongs to the address path going from the processor toward memory. Forty two belongs to the data path coming back. We are not making an assumption about whether address sixteen refers to a byte or a larger word in a real architecture. That detail belongs to a specific system's specification. For this small model, it names one location holding an unsigned eight-bit value. The distinction between a location and its contents remains useful even when the actual hardware is more complicated.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bus-1",
+              "kind": "bus",
+              "label": "Address 16 → value 42",
+              "nodes": [
+                "Processor",
+                "Memory"
+              ],
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bus-1"
+              ],
+              "caption": "Distinguish the location from its contents."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-2",
+      "title": "Follow the direction of each path",
+      "objective": "Identify which side produces each signal.",
+      "scenes": [
+        {
+          "id": "scene-3",
+          "title": "Follow the direction of each path",
+          "narration": "Now follow the arrows. The processor produces the address and the read request. Memory produces the returned data. Our drawing separates these directions to make the responsibilities visible. A real bus can share physical wires between reads and writes, but shared wires introduce an extra question: which device is currently allowed to drive them? Two devices driving contradictory values on the same wire can cause contention. We avoid that electrical complication here by showing a dedicated read-data path. This does not mean that all real buses look this way. It means that we have made the assumption explicit. When you study a new circuit diagram, do the same thing: mark the producer and consumer of every control signal before interpreting its waveform. A line with an arrow is carrying information in a direction. It is not a pipe transporting the entire stored memory location out of the chip. The location remains; the read returns a representation of its value.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bus-2",
+              "kind": "bus",
+              "label": "Address 16 → value 42",
+              "nodes": [
+                "Processor",
+                "Memory"
+              ],
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bus-2"
+              ],
+              "caption": "Identify which side produces each signal."
+            }
+          ]
+        },
+        {
+          "id": "scene-4",
+          "title": "Write down the handshake contract",
+          "narration": "A waveform becomes meaningful only after its rules are known. Here is our contract. First, the processor establishes an address. Second, it asserts read request and holds both the request and the address while waiting. Third, memory produces the requested data and asserts data valid. Fourth, the processor samples the data while valid is asserted. Finally, the processor releases the request, and memory releases valid before another transaction begins. We assume that memory keeps the data stable across the sample event. That assumption is part of this teaching contract, not a physical guarantee provided by the name data valid. Real devices specify setup time, hold time, clock relationships, and electrical limits. Our trace does not calculate those quantities. It shows logical ordering. This is why the horizontal spacing is marked as illustrative. We can reason about which event must precede another without pretending that the drawing supplies a clock frequency or a delay measured in nanoseconds.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bus-3",
+              "kind": "bus",
+              "label": "Address 16 → value 42",
+              "nodes": [
+                "Processor",
+                "Memory"
+              ],
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bus-3"
+              ],
+              "caption": "State the rules before interpreting the timing."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-3",
+      "title": "Begin with a stable address",
+      "objective": "Connect the first request to a definite location.",
+      "scenes": [
+        {
+          "id": "scene-5",
+          "title": "Begin with a stable address",
+          "narration": "At the start of the transaction, the processor puts sixteen on the address path. We then show the read request rising. The ordering matters because memory needs to associate the request with a definite location. In this model the processor does not change the address halfway through the wait. If it changed sixteen to seventeen while the request remained active, we would no longer have enough information to decide which location memory should return. A real protocol might define exactly when an address is latched and permit changes after that point. Our simplified contract does not include such a latch rule, so we use the stronger requirement of holding the address throughout the request. This is an example of reasoning from stated assumptions instead of importing an unstated rule from a different processor. On a homework diagram, find the address sampling rule before deciding whether an apparent address change is legal. The same shape can mean different things under different contracts.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bus-4",
+              "kind": "bus",
+              "label": "Address 16 → value 42",
+              "nodes": [
+                "Processor",
+                "Memory"
+              ],
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bus-4"
+              ],
+              "caption": "Connect the first request to a definite location."
+            }
+          ]
+        },
+        {
+          "id": "scene-6",
+          "title": "Waiting is part of the transaction",
+          "narration": "The request is now active, but the answer is not necessarily ready. Memory may need time to decode the address and produce data. During that interval, the read-request line stays high and data valid stays low. Those levels describe a waiting state. The processor should not treat elapsed drawing space as proof of completion. In a fixed-latency design, a specified number of clock cycles might provide that guarantee. In our handshake design, completion is indicated by valid instead. These are different ways of organizing a transfer. The advantage of a handshake model for teaching is that the dependency is visible: the receiver waits for a signal from the producer. If memory takes longer, the waiting interval stretches while the meaning of the sequence stays the same. We are not predicting how much longer a real memory will take. We are identifying the condition that lets the transaction move forward, and the signals that must remain stable while that condition is absent.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bus-5",
+              "kind": "bus",
+              "label": "Address 16 → value 42",
+              "nodes": [
+                "Processor",
+                "Memory"
+              ],
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bus-5"
+              ],
+              "caption": "Explain why request and completion are separate."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-4",
+      "title": "Data valid is a promise with assumptions",
+      "objective": "Identify what the receiver may infer from valid.",
+      "scenes": [
+        {
+          "id": "scene-7",
+          "title": "Data valid is a promise with assumptions",
+          "narration": "Memory eventually drives forty two on the read-data path and asserts data valid. In our contract, valid tells the processor that the requested value is available for sampling. It does not mean that the processor has already consumed it. Availability and consumption are separate events. Notice how that distinction answers a common question about timing diagrams: why are both a valid interval and a sample marker shown? The interval describes when the producer promises the data can be used. The marker describes when the consumer actually uses it. In real synchronous hardware, the sample might happen on a particular clock edge, and the data would need to be stable for specified intervals around that edge. Here the sample marker is just a logical event. We should not derive electrical margins from its position. The lesson is to connect each control signal to a specific promise and to ask what assumptions make that promise meaningful.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "timing-6",
+              "kind": "timing",
+              "label": "Logical ordering, not electrical timing",
+              "signals": [
+                {
+                  "name": "Read request",
+                  "values": [
+                    0,
+                    1,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Data valid",
+                  "values": [
+                    0,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Sample event",
+                  "values": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "timing-6"
+              ],
+              "caption": "Identify what the receiver may infer from valid."
+            }
+          ]
+        },
+        {
+          "id": "scene-8",
+          "title": "Sample inside the valid interval",
+          "narration": "Watch the timing cursor pass the rising request, then the rising valid signal, and finally the sample marker. The processor samples forty two only after valid is asserted. Suppose we moved that sample marker earlier, into the waiting interval. The data wires might still contain the result of an earlier transaction, or a value that has not settled. A number on the wires is not enough to establish that it is the answer to this request. The protocol supplies that interpretation. Under our assumptions, the legal sample belongs inside the valid interval and before the producer is allowed to withdraw the data. This gives us a simple check that does not require a detailed simulator: compare the logical sample event against the interval in which the contract guarantees validity. If the marker falls outside that interval, the proposed transaction violates our model. We can make that conclusion without guessing the accidental value that an early sample would capture.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "timing-7",
+              "kind": "timing",
+              "label": "Logical ordering, not electrical timing",
+              "signals": [
+                {
+                  "name": "Read request",
+                  "values": [
+                    0,
+                    1,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Data valid",
+                  "values": [
+                    0,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Sample event",
+                  "values": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "timing-7"
+              ],
+              "caption": "Use ordering to reject an early sample."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-5",
+      "title": "Finish the handshake cleanly",
+      "objective": "Distinguish completing one read from starting another.",
+      "scenes": [
+        {
+          "id": "scene-9",
+          "title": "Finish the handshake cleanly",
+          "narration": "Once the processor has sampled the value, it releases read request. Memory then releases data valid, returning the interface to its idle state. This return to idle matters because the next rising request should identify a new transaction. If the request stayed high forever, the two sides would need an additional rule to distinguish one transfer from the next. Some real protocols allow multiple transfers while a control line stays asserted, but those protocols define other timing or count rules. Our model uses one complete request-and-release sequence for each read. When inspecting a trace, therefore, do not stop at the moment the right value appears. Follow the controls until the interface is ready for another operation. A successful first sample does not prove that repeated transactions will work. The end of one operation determines whether the next operation can be recognized without confusion. This is a useful habit when debugging handshakes in both hardware and software.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "timing-8",
+              "kind": "timing",
+              "label": "Logical ordering, not electrical timing",
+              "signals": [
+                {
+                  "name": "Read request",
+                  "values": [
+                    0,
+                    1,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Data valid",
+                  "values": [
+                    0,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Sample event",
+                  "values": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "timing-8"
+              ],
+              "caption": "Distinguish completing one read from starting another."
+            }
+          ]
+        },
+        {
+          "id": "scene-10",
+          "title": "Read the whole timing diagram",
+          "narration": "Let us inspect the traces as a connected story. The request begins low, rises, stays high while memory responds, and then falls. Valid rises later and remains asserted across the sample event. The sample marker occurs once during the valid interval. These are illustrative logical samples on a shared horizontal axis. They are not measured analog waveforms, and the width of a drawn segment is not a timing specification. First check ordering: request before completion, completion before sampling, sampling before release. Next check stability: address held through the request, returned data held through sampling. Finally check the return to idle. These checks catch different classes of error. Correct event order cannot rescue an address that changes ambiguously. Stable data cannot rescue a sample taken before the requested transaction is identified. Treat a timing diagram as several simultaneous constraints, rather than searching for one familiar waveform shape and assuming the rest of the behavior must therefore be correct.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "timing-9",
+              "kind": "timing",
+              "label": "Logical ordering, not electrical timing",
+              "signals": [
+                {
+                  "name": "Read request",
+                  "values": [
+                    0,
+                    1,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Data valid",
+                  "values": [
+                    0,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                  ]
+                },
+                {
+                  "name": "Sample event",
+                  "values": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "timing-9"
+              ],
+              "caption": "Check each trace against the same transaction."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-6",
+      "title": "Check the returned number independently",
+      "objective": "Relate forty two to its unsigned eight-bit representation.",
+      "scenes": [
+        {
+          "id": "scene-11",
+          "title": "Check the returned number independently",
+          "narration": "The returned value is forty two. In an unsigned eight-bit representation, the place values from left to right are one hundred twenty eight, sixty four, thirty two, sixteen, eight, four, two, and one. Forty two is thirty two plus eight plus two. Setting exactly those positions produces zero zero one zero one zero one zero. This arithmetic check is independent of the timing check. A diagram can display the correct bit pattern at the wrong time, or a well-timed transfer can contain the wrong numerical value. Keep the two questions separate. Also notice that a drawing of eight parallel data lines does not tell us how a larger multi-byte value would be ordered in memory. Byte order becomes relevant when interpreting multiple bytes together. It is not needed to express this one eight-bit unsigned value. State the representation you are using before attaching additional meaning to a pattern of zeros and ones.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bits-10",
+              "kind": "equation",
+              "label": "Unsigned eight-bit value",
+              "text": "42 = 32 + 8 + 2\n00101010",
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bits-10"
+              ],
+              "caption": "Relate forty two to its unsigned eight-bit representation."
+            }
+          ]
+        },
+        {
+          "id": "scene-12",
+          "title": "Use the model on an unfamiliar example",
+          "narration": "Now imagine that your course gives you a different bus diagram. Begin by naming the participants and separating address, data, and control. Find the specification for when the address is accepted, when data is promised to be valid, and when the receiver samples it. Decide whether completion is signaled by a handshake or implied by a fixed timing rule. Then trace one transaction from idle back to a state where the next transaction can begin. Do not copy our control sequence into a different architecture without checking its contract. To test your understanding, pause and explain three failures in your own words: changing the address during an undefined interval, sampling before valid, and never releasing a request when the protocol requires a fresh request edge. For each failure, identify the exact assumption it breaks. That explanation is more useful than memorizing the picture. The diagram is a tool for making the agreement visible, so that you can reason about a new example instead of merely recognizing an old one.",
+          "source_refs": [
+            "original-teaching-bus"
+          ],
+          "objects": [
+            {
+              "id": "bus-11",
+              "kind": "bus",
+              "label": "Address 16 → value 42",
+              "nodes": [
+                "Processor",
+                "Memory"
+              ],
+              "calculation": {
+                "kind": "bus_read",
+                "inputs": {
+                  "address": 16,
+                  "value": 42,
+                  "width": 8
+                }
+              }
+            }
+          ],
+          "steps": [
+            {
+              "object_ids": [
+                "bus-11"
+              ],
+              "caption": "Transfer the reasoning while checking the new protocol."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

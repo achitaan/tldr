@@ -1,0 +1,9 @@
+{
+  "id": "circuit-demo", "title": "A simple resistive circuit", "target_minutes": 10,
+  "chapters": [{"id": "dc", "title": "Ideal direct-current circuit", "scenes": [{
+    "id": "ohms-law", "title": "Voltage, resistance and current", "source_refs": ["original-circuit-fixture"],
+    "narration": "Consider an ideal twelve volt source connected across a six ohm resistor. Ohm's law gives current as voltage divided by resistance, so two amperes flow. The resistor dissipates twenty four watts. This is an ideal direct current teaching model with no wire resistance, no temperature change, and no transient effects. Real component ratings must be checked separately.",
+    "objects": [{"id": "loop", "kind": "circuit", "label": "Ideal closed DC loop", "nodes": ["12 V source", "6 Ω resistor"], "calculation": {"kind": "ohms_law", "inputs": {"voltage": 12, "resistance": 6}}}],
+    "steps": [{"object_ids": ["loop"], "caption": "I = V/R = 2 A;  P = VI = 24 W."}]
+  }]}]
+}

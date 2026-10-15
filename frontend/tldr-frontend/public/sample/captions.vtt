@@ -1,0 +1,41 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:06.255
+This is a simplified teaching bus, not an exact E C E two twenty four protocol.
+
+2
+00:00:06.255 --> 00:00:09.940
+The processor places an address on the address bus.
+
+3
+00:00:09.940 --> 00:00:12.455
+It then asserts a read request.
+
+4
+00:00:12.455 --> 00:00:17.550
+The address identifies where to read; it is not the value being returned.
+
+5
+00:00:17.550 --> 00:00:20.905
+Keep the address stable while the memory responds.
+
+6
+00:00:20.905 --> 00:00:25.385
+Memory drives the data bus and signals that the value is valid.
+
+7
+00:00:25.385 --> 00:00:29.755
+The processor samples forty two only after that indication.
+
+8
+00:00:29.755 --> 00:00:35.220
+In eight bits, forty two is zero zero one zero one zero one zero.
+
+9
+00:00:35.220 --> 00:00:40.450
+Sampling before data becomes valid can capture an old or unstable value.
+
+10
+00:00:40.450 --> 00:00:45.360
+Finally, the processor releases the request and the transaction ends.
