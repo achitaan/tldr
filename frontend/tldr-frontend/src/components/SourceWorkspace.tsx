@@ -24,13 +24,17 @@ import {
 import type { CitationTarget, Course, Region, Source, SourcePage } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 import { MathText } from './MathText'
+import { readingBlocks } from '../lib/reading'
 
 type Props = {
+  active: boolean
   courseId: Course['id']
   sources: Source[]
   demo: boolean
   citationTarget?: CitationTarget
   selectedRegionIds: Region['id'][]
+  navigationTarget?: { sourceId: Source['id']; pageIndex: number }
+  onReadingSelection?: (target: { sourceId: Source['id']; pageId?: SourcePage['id'] }) => void
   onToggleRegion: (regionId: Region['id']) => void
   onSourcesChange: (sources: Source[]) => void
   onRefresh: () => void
@@ -40,11 +44,14 @@ type Props = {
 const emptyRegion = { x: 0.1, y: 0.1, width: 0.3, height: 0.2 }
 
 export function SourceWorkspace({
+  active,
   courseId,
   sources,
   demo,
   citationTarget,
   selectedRegionIds,
+  navigationTarget,
+  onReadingSelection,
   onToggleRegion,
   onSourcesChange,
   onRefresh,
@@ -59,18 +66,29 @@ export function SourceWorkspace({
   const [activeRegionId, setActiveRegionId] = useState<Region['id'] | undefined>()
   const [text, setText] = useState('')
   const [previewMath, setPreviewMath] = useState(false)
+  const [workspaceMode, setWorkspaceMode] = useState<'reading' | 'source'>('reading')
   const [saving, setSaving] = useState(false)
   const [showAdd, setShowAdd] = useState<'file' | 'text' | 'web' | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const pendingCitation = useRef<{ pageId: SourcePage['id']; regionId?: Region['id'] } | null>(null)
   const handledCitation = useRef<CitationTarget | undefined>()
+  const readingScrollRef = useRef<HTMLDivElement>(null)
+  const sourceToolsScrollRef = useRef<HTMLDivElement>(null)
+  const savedScroll = useRef({ reading: 0, source: 0 })
 
   const source = sources.find((entry) => entry.id === sourceId) ?? sources[0]
   const page = source?.pages[pageIndex]
   const pageRef = useRef(page)
   pageRef.current = page
+  const selectedSourceId = source?.id
   const pageId = page?.id
+
+  useEffect(() => {
+    if (!navigationTarget) return
+    setSourceId(navigationTarget.sourceId)
+    setPageIndex(navigationTarget.pageIndex)
+  }, [navigationTarget])
 
   useEffect(() => {
     if (!sources.some((entry) => entry.id === sourceId)) {
@@ -89,6 +107,7 @@ export function SourceWorkspace({
       setSourceId(nextSource.id)
       setPageIndex(nextPageIndex)
       setActiveRegionId(citationTarget.regionId)
+      if (citationTarget.regionId !== undefined) setWorkspaceMode('source')
     }
   }, [citationTarget, sources])
 
@@ -106,6 +125,23 @@ export function SourceWorkspace({
       setDraft(emptyRegion)
     }
   }, [pageId])
+
+  useEffect(() => {
+    if (selectedSourceId !== undefined) onReadingSelection?.({ sourceId: selectedSourceId, pageId })
+  }, [selectedSourceId, pageId, onReadingSelection])
+
+  useEffect(() => {
+    if (!active) {
+      savedScroll.current.reading = readingScrollRef.current?.scrollTop ?? savedScroll.current.reading
+      savedScroll.current.source = sourceToolsScrollRef.current?.scrollTop ?? savedScroll.current.source
+      return
+    }
+    const frame = window.requestAnimationFrame(() => {
+      if (readingScrollRef.current) readingScrollRef.current.scrollTop = savedScroll.current.reading
+      if (sourceToolsScrollRef.current) sourceToolsScrollRef.current.scrollTop = savedScroll.current.source
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [active])
 
   const deleteSource = async () => {
     if (!source) return
@@ -181,64 +217,68 @@ export function SourceWorkspace({
 
   if (!source || !page) {
     return (
-      <section className="empty-state" aria-labelledby="empty-source-title">
-        <IconPhoto size={34} aria-hidden="true" />
-        <h2 id="empty-source-title">{source ? source.status === 'error' ? 'Source ingestion failed' : `Preparing ${source.title}` : 'Bring in a source'}</h2>
-        <p>{source ? source.error || 'The source is queued for extraction. Pages and editable text will appear here when ingestion completes.' : 'Add a PDF, image, or text note. Extracted text and page visuals stay together.'}</p>
-        <div className="button-row">
-          <button className={source ? 'button' : 'button primary'} type="button" onClick={() => setShowAdd('file')}>
-            <IconFilePlus size={18} aria-hidden="true" /> Upload source
-          </button>
-          <button className="button" type="button" onClick={() => setShowAdd('text')}>
-            <IconTextPlus size={18} aria-hidden="true" /> Paste text
-          </button>
-          {source && <button className="button danger-ghost" type="button" onClick={() => setConfirmDelete(true)}><IconTrash size={18} aria-hidden="true" /> Remove source</button>}
-          <button className="button" type="button" onClick={() => setShowAdd('web')}>Import webpage</button>
+      <section className="source-workspace" aria-label="Source workspace" data-active={active}>
+        <div className="empty-state notes-source-empty" aria-labelledby="empty-source-title">
+          <IconPhoto size={34} aria-hidden="true" />
+          <h2 id="empty-source-title">{source ? source.status === 'error' ? 'Source ingestion failed' : `Preparing ${source.title}` : 'Bring in a source'}</h2>
+          <p>{source ? source.error || 'The source is queued for extraction. Pages and editable text will appear here when ingestion completes.' : 'Add a PDF, image, or text note. Extracted text and page visuals stay together.'}</p>
+          <div className="button-row">
+            <button className={source ? 'button' : 'button primary'} type="button" onClick={() => setShowAdd('file')}>
+              <IconFilePlus size={18} aria-hidden="true" /> Upload source
+            </button>
+            <button className="button" type="button" onClick={() => setShowAdd('text')}>
+              <IconTextPlus size={18} aria-hidden="true" /> Paste text
+            </button>
+            {source && <button className="button danger-ghost" type="button" onClick={() => setConfirmDelete(true)}><IconTrash size={18} aria-hidden="true" /> Remove source</button>}
+            <button className="button" type="button" onClick={() => setShowAdd('web')}>Import webpage</button>
+          </div>
+          {showAdd && <AddSource mode={showAdd} courseId={courseId} demo={demo} onClose={() => setShowAdd(null)} onAdded={(next) => { onSourcesChange([...sources, next]); setSourceId(next.id); onRefresh() }} onNotice={onNotice} />}
+          {confirmDelete && source && <ConfirmDialog title={`Remove ${source.title}?`} message="This removes the queued source and any extracted content. This cannot be undone." confirmLabel="Remove source" busy={deleting} onCancel={() => setConfirmDelete(false)} onConfirm={() => void deleteSource()} />}
         </div>
-        {showAdd && <AddSource mode={showAdd} courseId={courseId} demo={demo} onClose={() => setShowAdd(null)} onAdded={(next) => { onSourcesChange([...sources, next]); setSourceId(next.id); onRefresh() }} onNotice={onNotice} />}
-        {confirmDelete && source && <ConfirmDialog title={`Remove ${source.title}?`} message="This removes the queued source and any extracted content. This cannot be undone." confirmLabel="Remove source" busy={deleting} onCancel={() => setConfirmDelete(false)} onConfirm={() => void deleteSource()} />}
       </section>
     )
   }
 
   return (
-    <section className="source-workspace" aria-label="Source workspace">
+    <section className="source-workspace" aria-label="Source workspace" data-active={active}>
       <header className="workspace-header">
         <div>
           <span className="quiet-label">Source desk</span>
           <h1>{source.title}</h1>
           {source.kind === 'web' && <p><span className="status-tag">Web text extraction</span> <a href={source.fetched_url || source.source_url} target="_blank" rel="noopener noreferrer">Open original page</a></p>}
         </div>
-        <div className="button-row">
-          <button className="button compact" type="button" onClick={() => setShowAdd('file')}>
-            <IconFilePlus size={17} aria-hidden="true" /> Add source
-          </button>
-          <button className="button compact" type="button" onClick={() => setShowAdd('text')}>
-            <IconTextPlus size={17} aria-hidden="true" /> Paste text
-          </button>
-          <button className="button compact danger-ghost" type="button" onClick={() => setConfirmDelete(true)}>
-            <IconTrash size={17} aria-hidden="true" /> Remove
-          </button>
-          <button className="button compact" type="button" onClick={() => setShowAdd('web')}>Import webpage</button>
+        <div className="button-row source-header-actions">
+          <div className="source-mode-switch" aria-label="Notes view">
+            <button className={workspaceMode === 'reading' ? 'segmented active' : 'segmented'} type="button" aria-pressed={workspaceMode === 'reading'} onClick={() => setWorkspaceMode('reading')}>Read</button>
+            <button className={workspaceMode === 'source' ? 'segmented active' : 'segmented'} type="button" aria-pressed={workspaceMode === 'source'} onClick={() => setWorkspaceMode('source')}>Source tools</button>
+          </div>
+          <details className="source-actions-menu"><summary className="button compact">Source actions</summary><div>
+            <button className="button compact" type="button" onClick={() => setShowAdd('file')}><IconFilePlus size={17} aria-hidden="true" /> Add source</button>
+            <button className="button compact" type="button" onClick={() => setShowAdd('text')}><IconTextPlus size={17} aria-hidden="true" /> Paste text</button>
+            <button className="button compact" type="button" onClick={() => setShowAdd('web')}>Import webpage</button>
+            <button className="button compact danger-ghost" type="button" onClick={() => setConfirmDelete(true)}><IconTrash size={17} aria-hidden="true" /> Remove</button>
+          </div></details>
         </div>
       </header>
 
-      <nav className="source-tabs" aria-label="Course sources">
-        {sources.map((entry) => (
-          <button
-            className={entry.id === source.id ? 'source-tab active' : 'source-tab'}
-            type="button"
-            aria-current={entry.id === source.id ? 'page' : undefined}
-            onClick={() => { setSourceId(entry.id); setPageIndex(0) }}
-            key={entry.id}
-          >
-            <span>{entry.title}</span>
-            <small>{entry.status === 'ready' ? `${entry.pages.length} page${entry.pages.length === 1 ? '' : 's'}` : entry.status}</small>
-          </button>
-        ))}
-      </nav>
-
-      <div className="source-columns">
+      {workspaceMode === 'reading' ? (
+        <div className={page.regions.length > 0 ? 'reading-page-shell has-regions' : 'reading-page-shell'} ref={readingScrollRef}>
+          <div className="reader-toolbar">
+            <div className="page-stepper" aria-label="Reading pages">
+              <button className="icon-button" type="button" aria-label="Previous page" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => value - 1)}><IconArrowLeft size={18} /></button>
+              <span>Page {pageIndex + 1} of {source.pages.length}</span>
+              <button className="icon-button" type="button" aria-label="Next page" disabled={pageIndex >= source.pages.length - 1} onClick={() => setPageIndex((value) => value + 1)}><IconArrowRight size={18} /></button>
+            </div>
+            <span className="reader-source-label">{source.kind === 'web' ? 'Web extraction' : 'Source text'}</span>
+          </div>
+          <article className="reading-page" aria-label={`${source.title}, page ${page.number}`}>
+            <span className="quiet-label">{source.title} · {page.number}</span>
+            <div className="reading-copy"><ReadingContent text={text} /></div>
+            {text !== page.text && <p className="reader-unsaved" role="status">This page has an unsaved text correction. Open Source tools to review or save it.</p>}
+          </article>
+          {page.regions.length > 0 && <aside className="reading-regions" aria-label="Page source regions"><h3>Source margin</h3>{page.regions.map((region, index) => <button type="button" className={selectedRegionIds.includes(region.id) ? 'region-row selected' : 'region-row'} onClick={() => onToggleRegion(region.id)} key={region.id}><span className="region-number">{index + 1}</span><span><strong>{region.label || `Region ${index + 1}`}</strong><small>{region.text || 'No region text yet'}</small></span><span>{selectedRegionIds.includes(region.id) ? 'In chat' : 'Add'}</span></button>)}</aside>}
+        </div>
+      ) : <div className="source-columns" ref={sourceToolsScrollRef}>
         <div className="viewer-column">
           {source.kind === 'web' ? <div className="region-editor"><div>
             <div className="page-stepper" aria-label="Web extraction pages">
@@ -331,11 +371,22 @@ export function SourceWorkspace({
             </div>
           )}
         </aside>
-      </div>
+      </div>}
       {showAdd && <AddSource mode={showAdd} courseId={courseId} demo={demo} onClose={() => setShowAdd(null)} onAdded={(next) => { onSourcesChange([...sources, next]); setSourceId(next.id); onRefresh() }} onNotice={onNotice} />}
       {confirmDelete && <ConfirmDialog title={`Remove ${source.title}?`} message="This removes the source, its page images, extracted text, and regions from this course. Existing lesson videos may retain copies; delete the course to remove its lessons and render cache. This cannot be undone." confirmLabel="Remove source" busy={deleting} onCancel={() => setConfirmDelete(false)} onConfirm={() => void deleteSource()} />}
     </section>
   )
+}
+
+function ReadingContent({ text }: { text: string }) {
+  const blocks = readingBlocks(text)
+  return <>{blocks.flatMap((block, index) => {
+    const heading = block.match(/^#{1,6}\s+([^\n]+)(?:\n([\s\S]+))?$/)
+    if (!heading) return <p key={`body-${index}`}><MathText text={block.trim()} /></p>
+    const items = [<h2 className="source-text-heading" key={`heading-${index}`}><MathText text={heading[1].trim()} /></h2>]
+    if (heading[2]?.trim()) items.push(<p key={`heading-body-${index}`}><MathText text={heading[2].trim()} /></p>)
+    return items
+  })}</>
 }
 
 type CanvasProps = {

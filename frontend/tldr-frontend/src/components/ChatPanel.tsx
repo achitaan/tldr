@@ -1,285 +1,292 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  IconBook2,
-  IconChevronDown,
-  IconMessageCircle,
-  IconPlayerStop,
-  IconSend,
-  IconSparkles,
-  IconX,
-} from '../icons'
+import { IconBook2, IconMessageCircle, IconPlayerStop, IconSend, IconSparkles, IconX } from '../icons'
 import { api } from '../lib/api'
+import { attachChatContext, completeChatSend, createLocalChatSession, createSavedChatSession, deriveConversationTitle, reconcileConversationSessions, updateChatSession, type ChatSessionMap } from '../lib/chat'
 import { demoMessages } from '../data/demo'
 import { MathText } from './MathText'
 import type { Citation, CitationTarget, Conversation, Course, Job, Message, Region, VideoContext } from '../types'
+import './ChatPanel.css'
+
+export type ChatAttachmentRequest = { id: number; videoContext?: VideoContext; regionIds?: Region['id'][] }
 
 type Props = {
+  active: boolean
+  attachmentRequest?: ChatAttachmentRequest
   courseId: Course['id']
   courseName: string
   conversations: Conversation[]
   jobs: Job[]
   demo: boolean
   generationEnabled?: boolean
-  selectedRegionIds: Region['id'][]
-  videoContext?: VideoContext
-  onClearVideoContext: () => void
-  onConversationsChange: (items: Conversation[]) => void
+  onConversationCreated: (conversation: Conversation) => void
   onJobCreated: (job: Job) => void
   onCitation: (target: CitationTarget) => void
   onNotice: (message: string) => void
+  onRegionSelectionChange?: (ids: Region['id'][]) => void
 }
 
-export function ChatPanel({
-  courseId,
-  courseName,
-  conversations,
-  jobs,
-  demo,
-  generationEnabled,
-  selectedRegionIds,
-  videoContext,
-  onClearVideoContext,
-  onConversationsChange,
-  onJobCreated,
-  onCitation,
-  onNotice,
-}: Props) {
-  const [conversationId, setConversationId] = useState<Conversation['id'] | undefined>(conversations[0]?.id)
-  const [messages, setMessages] = useState<Message[]>(demo ? demoMessages : [])
-  const [draft, setDraft] = useState('')
-  const [loading, setLoading] = useState(!demo)
-  const [submitting, setSubmitting] = useState(false)
-  const eventSourceRef = useRef<EventSource | null>(null)
+// Course identity owns the entire session store and every in-flight request.
+export function ChatPanel(props: Props) {
+  return <CourseChatPanel key={`${typeof props.courseId}:${props.courseId}:${props.demo}`} {...props} />
+}
+
+function CourseChatPanel(props: Props) {
+  const { active, attachmentRequest, courseId, courseName, conversations, demo, generationEnabled, onCitation } = props
+  const [sessions, setSessions] = useState<ChatSessionMap>(() => Object.fromEntries(conversations.map((conversation) => {
+    const session = createSavedChatSession(conversation, demo && courseId === 'demo-transport' ? demoMessages : [])
+    return [session.key, { ...session, loaded: demo || session.loaded }]
+  })))
+  const [selectedKey, setSelectedKey] = useState<string>()
+  const sessionsRef = useRef(sessions)
+  const selectedRef = useRef(selectedKey)
+  const lastSelectedRef = useRef<string>()
+  const propsRef = useRef(props)
+  propsRef.current = props
+  const lifetime = useRef(0)
+  const requestSequence = useRef(0)
+  const controllers = useRef(new Set<AbortController>())
+  const pendingLoads = useRef(new Map<string, number>())
+  const streams = useRef(new Map<string, EventSource>())
+  const consumedAttachments = useRef(new Set<number>())
+  const composerRef = useRef<HTMLTextAreaElement>(null)
+  const newChatRef = useRef<HTMLButtonElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const conversationRef = useRef(conversationId)
-  conversationRef.current = conversationId
+  const panelRef = useRef<HTMLElement>(null)
+  const focusComposer = useRef(false)
+  const mutate = useCallback((change: (store: ChatSessionMap) => ChatSessionMap) => {
+    const next = change(sessionsRef.current)
+    sessionsRef.current = next
+    setSessions(next)
+  }, [])
+  const select = useCallback((key?: string) => {
+    selectedRef.current = key
+    if (key) lastSelectedRef.current = key
+    setSelectedKey(key)
+  }, [])
 
   useEffect(() => {
-    setConversationId((current) => conversations.some((entry) => entry.id === current) ? current : conversations[0]?.id)
-  }, [conversations])
-
-  useEffect(() => {
-    eventSourceRef.current?.close()
-    if (demo) {
-      setMessages(courseId === 'demo-transport' ? demoMessages : [])
-      setLoading(false)
-      return
-    }
-    if (!conversationId) {
-      setMessages([])
-      setLoading(false)
-      return
-    }
-    const controller = new AbortController()
-    let current = true
-    setLoading(true)
-    api.messages(conversationId, controller.signal)
-      .then((items) => { if (current) setMessages(items) })
-      .catch((error) => { if (current && error instanceof Error && error.name !== 'AbortError') onNotice(error.message) })
-      .finally(() => { if (current) setLoading(false) })
+    lifetime.current += 1
+    const requests = controllers.current
+    const connections = streams.current
+    const loads = pendingLoads.current
     return () => {
-      current = false
-      controller.abort()
-      eventSourceRef.current?.close()
+      lifetime.current += 1
+      requests.forEach((controller) => controller.abort())
+      requests.clear()
+      connections.forEach((stream) => stream.close())
+      connections.clear()
+      loads.clear()
     }
-  }, [conversationId, courseId, demo, onNotice])
+  }, [])
 
+  const awaitingCreation = Object.values(sessions).some((session) => session.submitting && session.conversationId === undefined)
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages])
+    mutate((store) => reconcileConversationSessions(store, conversations))
+  }, [conversations, mutate, awaitingCreation])
 
-  const ensureConversation = async () => {
-    const existing = conversations.find((entry) => entry.id === conversationId) ?? conversations[0]
-    if (existing) return existing
-    const created = await api.createConversation(courseId)
-    onConversationsChange([...conversations, created])
-    conversationRef.current = created.id
-    setConversationId(created.id)
-    return created
-  }
-
-  const refreshMessages = useCallback(async (id: Conversation['id']) => {
+  const refresh = useCallback(async (key: string, showLoading = false) => {
+    const original = sessionsRef.current[key]
+    if (demo || !original || original.conversationId === undefined || original.submitting) return
+    if (!showLoading && pendingLoads.current.has(key)) return
+    const epoch = lifetime.current
+    const requestId = ++requestSequence.current
+    const controller = new AbortController()
+    controllers.current.add(controller)
+    pendingLoads.current.set(key, requestId)
+    mutate((store) => updateChatSession(store, key, { loadRequestId: requestId, loading: showLoading, ...(showLoading ? { loadError: undefined } : {}) }))
     try {
-      const next = await api.messages(id)
-      if (conversationRef.current === id) setMessages(next)
+      const messages = await api.messages(original.conversationId, controller.signal)
+      if (epoch !== lifetime.current) return
+      mutate((store) => store[key]?.loadRequestId === requestId
+        ? updateChatSession(store, key, { messages, loaded: true, loading: false, loadError: undefined }) : store)
     } catch (error) {
-      onNotice(error instanceof Error ? error.message : 'Messages could not be refreshed.')
+      if (epoch !== lifetime.current || controller.signal.aborted) return
+      mutate((store) => store[key]?.loadRequestId === requestId
+        ? updateChatSession(store, key, { loading: false, loadError: error instanceof Error ? error.message : 'Messages could not be loaded.' }) : store)
+    } finally {
+      controllers.current.delete(controller)
+      if (pendingLoads.current.get(key) === requestId) pendingLoads.current.delete(key)
     }
-  }, [onNotice])
-
-  const hasPending = messages.some((message) => message.status === 'pending')
-  // Course jobs prompt refreshes after a retry, but only this conversation's
-  // pending messages can disable its composer. Paused jobs are terminal waits.
-  const hasActiveChatJob = jobs.some((job) => job.kind === 'chat' && ['queued', 'running'].includes(job.status))
-  const sending = submitting || hasPending
-  const savingOnly = !demo && generationEnabled === false
+  }, [demo, mutate])
 
   useEffect(() => {
-    if (demo || !conversationId || (!hasPending && !hasActiveChatJob)) return
-    const poll = window.setInterval(() => { void refreshMessages(conversationId) }, 2500)
-    return () => window.clearInterval(poll)
-  }, [conversationId, demo, hasActiveChatJob, hasPending, refreshMessages])
+    if (selectedKey && !sessionsRef.current[selectedKey]?.loaded) void refresh(selectedKey, true)
+  }, [selectedKey, refresh])
 
-  const startStream = (conversation: Conversation, job: Job) => {
-    eventSourceRef.current?.close()
-    const stream = new EventSource(api.streamUrl(conversation.id, job.id))
-    eventSourceRef.current = stream
+  // Read the latest sessions/jobs inside one stable timer; parent rerenders do not restart polling.
+  useEffect(() => {
+    if (demo) return
+    const timer = window.setInterval(() => {
+      const activeJobs = propsRef.current.jobs.some((job) => job.kind === 'chat' && ['queued', 'running'].includes(job.status))
+      Object.values(sessionsRef.current).forEach((session) => {
+        if (session.loaded && !session.loading && !session.submitting && (activeJobs || session.messages.some((message) => message.status === 'pending'))) void refresh(session.key)
+      })
+    }, 2500)
+    return () => window.clearInterval(timer)
+  }, [demo, refresh])
 
+  useEffect(() => {
+    if (!attachmentRequest || consumedAttachments.current.has(attachmentRequest.id)) return
+    consumedAttachments.current.add(attachmentRequest.id)
+    let key = selectedRef.current ?? lastSelectedRef.current
+    if (!key || !sessionsRef.current[key]) {
+      const session = createLocalChatSession()
+      key = session.key
+      mutate((store) => ({ ...store, [session.key]: session }))
+    }
+    const targetKey = key
+    mutate((store) => updateChatSession(store, targetKey, (session) => attachChatContext(session, attachmentRequest)))
+    focusComposer.current = true
+    select(key)
+  }, [attachmentRequest, mutate, select])
+
+  const session = selectedKey ? sessions[selectedKey] : undefined
+  useEffect(() => {
+    if (active) propsRef.current.onRegionSelectionChange?.(session?.regionIds ?? [])
+  }, [active, selectedKey, session?.regionIds])
+  useEffect(() => {
+    if (active && selectedKey && focusComposer.current) {
+      focusComposer.current = false
+      composerRef.current?.focus()
+    }
+  }, [active, selectedKey, attachmentRequest])
+  useEffect(() => {
+    if (active) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+  }, [active, selectedKey, session?.messages])
+
+  useEffect(() => {
+    if (!active || !selectedKey) return
+    const back = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      if (!(event.target instanceof Node) || !panelRef.current?.contains(event.target)) return
+      // Higher-level overlays own Escape before the chat list does.
+      const overlay = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"], [role="menu"], dialog[open]')).some((element) => element.getClientRects().length > 0)
+      if (overlay) return
+      event.preventDefault()
+      select(undefined)
+      newChatRef.current?.focus()
+    }
+    document.addEventListener('keydown', back)
+    return () => document.removeEventListener('keydown', back)
+  }, [active, selectedKey, select])
+
+  const startStream = (key: string, id: Conversation['id'], job: Job, epoch: number) => {
+    streams.current.get(key)?.close()
+    const stream = new EventSource(api.streamUrl(id, job.id))
+    streams.current.set(key, stream)
+    const valid = () => epoch === lifetime.current && streams.current.get(key) === stream
+    const finish = () => {
+      if (!valid()) return
+      stream.close()
+      streams.current.delete(key)
+      void refresh(key)
+    }
     stream.addEventListener('message', (event) => {
+      if (!valid()) return
       try {
-        const payload = JSON.parse((event as MessageEvent).data) as Message
-        if (conversationRef.current === conversation.id) setMessages((items) => [...items.filter((item) => item.id !== payload.id), payload])
+        const message = JSON.parse((event as MessageEvent).data) as Message
+        if (message.conversation !== id || !Array.isArray(message.citations) || typeof message.content !== 'string') throw new Error('Invalid response')
+        mutate((store) => updateChatSession(store, key, (current) => ({ ...current, loading: false, loadRequestId: ++requestSequence.current, messages: [...current.messages.filter((item) => item.id !== message.id), message] })))
       } catch {
-        onNotice('The assistant response arrived in an unreadable format.')
+        mutate((store) => updateChatSession(store, key, { error: 'The assistant response arrived in an unreadable format.' }))
       }
     })
-    stream.addEventListener('done', () => {
-      stream.close()
-      if (eventSourceRef.current === stream) eventSourceRef.current = null
-      void refreshMessages(conversation.id)
-    })
+    stream.addEventListener('done', finish)
     stream.addEventListener('error', (event) => {
+      if (!valid()) return
       if (event instanceof MessageEvent) {
         try {
           const payload = JSON.parse(event.data) as { detail?: string }
-          if (payload.detail) onNotice(payload.detail)
+          if (payload.detail) mutate((store) => updateChatSession(store, key, { error: payload.detail }))
         } catch {
-          onNotice('The response stream ended before completion. Reloaded messages remain available.')
+          mutate((store) => updateChatSession(store, key, { error: 'The response stream ended before completion. Saved messages remain available.' }))
         }
-        stream.close()
-        if (eventSourceRef.current === stream) eventSourceRef.current = null
-        void refreshMessages(conversation.id)
       }
+      finish()
     })
   }
 
   const send = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!draft.trim() || sending || demo) return
-    setSubmitting(true)
+    const key = selectedRef.current
+    const original = key ? sessionsRef.current[key] : undefined
+    if (!key || !original || !original.loaded || !original.draft.trim() || original.submitting || original.loading || original.messages.some((message) => message.status === 'pending') || demo) return
+    const epoch = lifetime.current
+    const requestId = ++requestSequence.current
+    const content = original.draft.trim()
+    const regionIds = [...original.regionIds]
+    const context = original.videoContext ? { revision_id: original.videoContext.revision_id, scene_id: original.videoContext.scene_id, time_seconds: original.videoContext.time_seconds, object_ids: original.videoContext.object_ids ? [...original.videoContext.object_ids] : undefined } : undefined
+    const valid = () => epoch === lifetime.current && sessionsRef.current[key]?.sendRequestId === requestId
+    streams.current.get(key)?.close()
+    streams.current.delete(key)
+    pendingLoads.current.delete(key)
+    mutate((store) => updateChatSession(store, key, { submitting: true, error: undefined, sendRequestId: requestId, loadRequestId: ++requestSequence.current }))
     try {
-      const conversation = await ensureConversation()
-      const { message, job } = await api.sendMessage(conversation.id, {
-        content: draft.trim(),
-        region_ids: selectedRegionIds,
-        context: videoContext ? {
-          revision_id: videoContext.revision_id,
-          scene_id: videoContext.scene_id,
-          time_seconds: videoContext.time_seconds,
-          object_ids: videoContext.object_ids,
-        } : undefined,
-      })
-      if (conversationRef.current === conversation.id) setMessages((items) => [...items, message])
-      setDraft('')
-      onJobCreated(job)
-      await refreshMessages(conversation.id)
-      if (conversationRef.current === conversation.id) startStream(conversation, job)
+      let id = original.conversationId
+      if (id === undefined) {
+        const created = await api.createConversation(courseId, deriveConversationTitle(content))
+        if (!valid()) return
+        id = created.id
+        mutate((store) => updateChatSession(store, key, { conversationId: id, title: created.title, createdAt: created.created_at }))
+        propsRef.current.onConversationCreated(created)
+      }
+      const { message, job } = await api.sendMessage(id, { content, region_ids: regionIds, context })
+      if (!valid()) return
+      mutate((store) => updateChatSession(store, key, (current) => completeChatSend(current, original, message)))
+      propsRef.current.onJobCreated(job)
+      startStream(key, id, job, epoch)
+      void refresh(key, true)
     } catch (error) {
-      onNotice(error instanceof Error ? error.message : 'The question could not be sent.')
-    } finally {
-      setSubmitting(false)
+      if (valid()) mutate((store) => updateChatSession(store, key, { submitting: false, error: error instanceof Error ? error.message : 'The question could not be sent.' }))
     }
   }
 
+  const savingOnly = !demo && generationEnabled === false
+  const sending = Boolean(session?.submitting || session?.messages.some((message) => message.status === 'pending'))
+  const open = (key: string) => { focusComposer.current = true; select(key) }
+  const newChat = () => {
+    const created = createLocalChatSession()
+    mutate((store) => ({ ...store, [created.key]: created }))
+    open(created.key)
+  }
+  const chatList = Object.values(sessions).sort((a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0))
+
   return (
-    <aside className="chat-panel" aria-labelledby="chat-heading">
+    <section className="chat-panel" ref={panelRef} aria-label="Tutor chats">
       <header className="chat-header">
-        <div>
-          <span className="quiet-label">Course conversation</span>
-          <h2 id="chat-heading">Ask with evidence</h2>
-        </div>
-        {conversations.length > 1 && (
-          <label className="conversation-select">
-            <span className="sr-only">Conversation</span>
-            <select value={String(conversationId ?? '')} onChange={(event) => setConversationId(conversations.find((conversation) => String(conversation.id) === event.target.value)?.id)}>
-              {conversations.map((conversation) => <option value={String(conversation.id)} key={conversation.id}>{conversation.title}</option>)}
-            </select>
-            <IconChevronDown size={16} aria-hidden="true" />
-          </label>
-        )}
+        <div>{session && <button type="button" className="chat-back" onClick={() => { select(undefined); newChatRef.current?.focus() }}>← Back to chats</button>}<h2>{session ? session.title : 'Chats'}</h2></div>
+        <button type="button" className="button chat-new" ref={newChatRef} onClick={newChat}>New chat</button>
       </header>
-
-      <div className="chat-context" aria-label="Attached context">
-        <div>
-          <IconBook2 size={16} aria-hidden="true" />
-          <span>{selectedRegionIds.length ? `${selectedRegionIds.length} source region${selectedRegionIds.length === 1 ? '' : 's'}` : courseName}</span>
+      {!session ? <div className="chat-history">
+        <p className="chat-history-intro">Your conversations for {courseName}.</p>
+        {chatList.length === 0 ? <div className="chat-empty"><IconMessageCircle size={30} aria-hidden="true" /><strong>No chats yet</strong><p>Start a new chat to ask about your course.</p></div> : <ul aria-label="Chats">{chatList.map((chat) => <li key={chat.key}><button type="button" onClick={() => open(chat.key)}><strong>{chat.title}</strong><span>{chat.createdAt && !Number.isNaN(Date.parse(chat.createdAt)) ? <time dateTime={chat.createdAt}>{new Date(chat.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</time> : 'Date unavailable'}{chat.conversationId === undefined && ' · Unsent'}{chat.submitting && ' · Sending'}</span></button></li>)}</ul>}
+      </div> : <>
+        <div className="chat-context" aria-label="Attached context">
+          <div><IconBook2 size={16} aria-hidden="true" /><span>{courseName}</span></div>
+          {session.regionIds.length > 0 && <div className="context-chip"><span>{session.regionIds.length} source region{session.regionIds.length === 1 ? '' : 's'}</span><button type="button" aria-label="Remove source regions" onClick={() => mutate((store) => updateChatSession(store, session.key, (current) => ({ ...current, regionIds: [], contextVersion: current.contextVersion + 1 })))}><IconX size={14} /></button></div>}
+          {session.videoContext && <div className="context-chip"><IconPlayerStop size={15} aria-hidden="true" /><span>{session.videoContext.label}</span><button type="button" aria-label="Remove video context" onClick={() => mutate((store) => updateChatSession(store, session.key, (current) => ({ ...current, videoContext: undefined, contextVersion: current.contextVersion + 1 })))}><IconX size={14} /></button></div>}
         </div>
-        {videoContext && (
-          <div className="context-chip">
-            <IconPlayerStop size={15} aria-hidden="true" />
-            <span>{videoContext.label}</span>
-            <button type="button" aria-label="Remove video context" onClick={onClearVideoContext}><IconX size={14} /></button>
-          </div>
-        )}
-      </div>
-
-      <div className="message-list" ref={scrollRef} aria-live="polite" aria-busy={loading || sending}>
-        {loading ? (
-          <div className="message-skeleton" aria-label="Loading conversation"><i /><i /><i /></div>
-        ) : messages.length === 0 ? (
-          <div className="chat-empty">
-            <IconMessageCircle size={30} aria-hidden="true" />
-            <strong>Start with what you can see</strong>
-            <p>Mark a source region, then ask for an explanation, comparison, or worked example.</p>
-          </div>
-        ) : messages.map((message) => (
-          <article className={`message ${message.role}`} key={message.id}>
-            <div className="message-meta">
-              <span>{message.role === 'assistant' ? 'Tutor' : 'You'}</span>
-              {message.curated && <small>Curated example</small>}
-              {message.status === 'pending' && <small>{savingOnly ? 'Saved; waiting for AI availability' : 'Waiting for validated citations'}</small>}
-              {message.status === 'error' && <small>Could not complete</small>}
-            </div>
+        <div className="message-list" ref={scrollRef} aria-live="polite" aria-busy={session.loading || sending}>
+          {session.loading ? <div className="message-skeleton" aria-label="Loading conversation"><i /><i /><i /></div> : session.messages.length === 0 ? <div className="chat-empty"><IconMessageCircle size={30} aria-hidden="true" /><strong>Start with what you can see</strong><p>Attach a source region or lesson moment, then ask for an explanation, comparison, or worked example.</p></div> : session.messages.map((message) => <article className={`message ${message.role}`} key={message.id}>
+            <div className="message-meta"><span>{message.role === 'assistant' ? 'Tutor' : 'You'}</span>{message.curated && <small>Curated example</small>}{message.status === 'pending' && <small>{savingOnly ? 'Saved; waiting for AI availability' : 'Waiting for validated citations'}</small>}{message.status === 'error' && <small>Could not complete</small>}</div>
             <p><MathText text={message.content} /></p>
             {message.citations.length > 0 && <CitationList citations={message.citations} onCitation={onCitation} />}
-          </article>
-        ))}
-        {sending && (
-          <div className="assistant-working" role="status">
-            <IconSparkles size={17} aria-hidden="true" />
-            <span>{savingOnly ? 'Saving your question and selected context' : 'Checking the answer against your sources'}</span>
-          </div>
-        )}
-      </div>
-
-      <form className="chat-composer" onSubmit={send}>
-        {demo && <p className="demo-readonly">Demo conversation is read-only and makes no API requests.</p>}
-        {savingOnly && <p className="demo-readonly">AI answers are paused. Save your question with its source or lesson context, then retry it from Activity after setup or the free quota resets.</p>}
-        <label htmlFor="chat-input">Question</label>
-        <textarea
-          id="chat-input"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={demo ? 'Open the local app to ask about your own course.' : 'Ask about the source or selected lesson moment'}
-          disabled={demo}
-          rows={3}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault()
-              event.currentTarget.form?.requestSubmit()
-            }
-          }}
-        />
-        <div className="composer-footer">
-          <span>Enter to {savingOnly ? 'save' : 'send'}. Shift + Enter for a new line.</span>
-          <button className="send-button" type="submit" aria-label={savingOnly ? 'Save question' : 'Send question'} disabled={demo || sending || !draft.trim()}><IconSend size={19} /></button>
+          </article>)}
+          {sending && <div className="assistant-working" role="status"><IconSparkles size={17} aria-hidden="true" /><span>{savingOnly ? 'Saving your question and selected context' : 'Checking the answer against your sources'}</span></div>}
+          {(session.error || session.loadError) && <div className="chat-error" role="alert"><p>{session.error || session.loadError}</p>{session.loadError && <button className="button" type="button" onClick={() => void refresh(session.key, true)}>Retry loading</button>}</div>}
         </div>
-      </form>
-    </aside>
+        <form className="chat-composer" onSubmit={send}>
+          {demo && <p className="demo-readonly">Demo conversation is read-only and makes no API requests.</p>}
+          {savingOnly && <p className="demo-readonly">AI answers are paused. Save your question with its source or lesson context, then retry it from Activity after setup or the free quota resets.</p>}
+          <label htmlFor="chat-input">Question</label>
+          <textarea id="chat-input" ref={composerRef} value={session.draft} onChange={(event) => { const value = event.target.value; mutate((store) => updateChatSession(store, session.key, (current) => ({ ...current, draft: value, draftVersion: current.draftVersion + 1 }))) }} placeholder={demo ? 'Open the local app to ask about your own course.' : 'Ask about the source or selected lesson moment'} disabled={demo} rows={3} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }} />
+          <div className="composer-footer"><span>Enter to {savingOnly ? 'save' : 'send'}. Shift + Enter for a new line.</span><button className="send-button" type="submit" aria-label={savingOnly ? 'Save question' : 'Send question'} disabled={demo || sending || session.loading || !session.loaded || !session.draft.trim()}><IconSend size={19} /></button></div>
+        </form>
+      </>}
+    </section>
   )
 }
 
 function CitationList({ citations, onCitation }: { citations: Citation[]; onCitation: (target: CitationTarget) => void }) {
-  return (
-    <ol className="citations" aria-label="Answer citations">
-      {citations.map((citation, index) => (
-        <li key={`${citation.page_id}-${citation.region_id ?? index}`}>
-          <button type="button" onClick={() => onCitation({ sourceId: citation.source_id, pageId: citation.page_id, regionId: citation.region_id })}>
-            <span>[{index + 1}] {citation.source_title}, p. {citation.page_number}{citation.visual ? ' (visual evidence)' : ''}</span>
-            {citation.quote && <q><MathText text={citation.quote} /></q>}
-          </button>
-        </li>
-      ))}
-    </ol>
-  )
+  return <ol className="citations" aria-label="Answer citations">{citations.map((citation, index) => <li key={`${citation.page_id}-${citation.region_id ?? index}`}><button type="button" onClick={() => onCitation({ sourceId: citation.source_id, pageId: citation.page_id, regionId: citation.region_id })}><span>[{index + 1}] {citation.source_title}, p. {citation.page_number}{citation.visual ? ' (visual evidence)' : ''}</span>{citation.quote && <q><MathText text={citation.quote} /></q>}</button></li>)}</ol>
 }

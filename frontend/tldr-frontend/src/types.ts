@@ -85,6 +85,7 @@ export type Conversation = {
   id: Id
   course: Id
   title: string
+  created_at?: string
 }
 
 export type ChatContext = {

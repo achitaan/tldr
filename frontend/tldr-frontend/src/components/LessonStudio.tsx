@@ -18,14 +18,17 @@ import { SceneThumbnail, type SourceThumbnail } from './SceneThumbnail'
 import { TeachingPlan } from './TeachingPlan'
 import { sceneAtTime, sceneSeekTime, timelineSeconds } from '../lib/timeline'
 import { crossedPractice } from '../lib/practice'
+import { sceneCitations, type SceneReferences } from '../lib/sceneSources'
 
 type Props = {
+  active: boolean
   courseId: Course['id']
   lessons: Lesson[]
   demo: boolean
   onLessonsChange: (lessons: Lesson[]) => void
   onJobCreated: (job: Job) => void
   onVideoContext: (context: VideoContext) => void
+  onSceneReferences: (context: SceneReferences | undefined) => void
   onNotice: (message: string) => void
   availableRefs: Array<{ id: string; label: string; regionId: Region['id'] }>
   sources: Source[]
@@ -46,7 +49,7 @@ const blankSpec: LessonSpec = {
   }],
 }
 
-export function LessonStudio({ courseId, lessons, demo, onLessonsChange, onJobCreated, onVideoContext, onNotice, availableRefs, sources, focusRevisionId, onRefresh }: Props) {
+export function LessonStudio({ active, courseId, lessons, demo, onLessonsChange, onJobCreated, onVideoContext, onSceneReferences, onNotice, availableRefs, sources, focusRevisionId, onRefresh }: Props) {
   const [lessonId, setLessonId] = useState<Lesson['id'] | undefined>(lessons[0]?.id)
   const [revisionId, setRevisionId] = useState<LessonRevision['id'] | undefined>(lessons[0]?.revisions[lessons[0].revisions.length - 1]?.id)
   const [draft, setDraft] = useState<LessonSpec>(lessons[0]?.revisions[lessons[0].revisions.length - 1]?.spec ?? blankSpec)
@@ -54,7 +57,7 @@ export function LessonStudio({ courseId, lessons, demo, onLessonsChange, onJobCr
   const [teachingReport, setTeachingReport] = useState<TeachingPlanReport | null>(null)
   const [validatingPlan, setValidatingPlan] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [mode, setMode] = useState<'storyboard' | 'preview'>('storyboard')
+  const [mode, setMode] = useState<'storyboard' | 'preview'>(lessons[0]?.revisions.length ? 'preview' : 'storyboard')
   const [creatingNew, setCreatingNew] = useState(lessons.length === 0)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const hydratedLessonKey = useRef<string | undefined>()
@@ -306,22 +309,22 @@ export function LessonStudio({ courseId, lessons, demo, onLessonsChange, onJobCr
         <div><span className="quiet-label">Lesson studio</span><h1>{lesson?.title ?? 'Build a visual lesson'}</h1></div>
         <div className="button-row">
           {lesson && lesson.revisions.length > 1 && <label className="revision-select"><span>Revision</span><select value={String(revision?.id ?? '')} onChange={(event) => setRevisionId(lesson.revisions.find((entry) => String(entry.id) === event.target.value)?.id)}>{lesson.revisions.map((entry) => <option value={String(entry.id)} key={entry.id}>Revision {entry.number}</option>)}</select></label>}
+          <button className={mode === 'preview' ? 'segmented active' : 'segmented'} type="button" onClick={() => setMode('preview')} disabled={!revision}>Watch</button>
           <button className={mode === 'storyboard' ? 'segmented active' : 'segmented'} type="button" onClick={() => setMode('storyboard')}>Storyboard</button>
-          <button className={mode === 'preview' ? 'segmented active' : 'segmented'} type="button" onClick={() => setMode('preview')} disabled={!revision}>Watch and review</button>
           {lesson && <button className="button compact danger-ghost" type="button" onClick={() => setConfirmDelete(true)}>Remove lesson</button>}
         </div>
       </header>
 
       <div className="lesson-picker" role="navigation" aria-label="Lessons">
         {lessons.map((entry) => (
-          <button type="button" className={!creatingNew && entry.id === lesson?.id ? 'lesson-pick active' : 'lesson-pick'} onClick={() => { setCreatingNew(false); setLessonId(entry.id) }} key={entry.id}>
+          <button type="button" className={!creatingNew && entry.id === lesson?.id ? 'lesson-pick active' : 'lesson-pick'} onClick={() => { setCreatingNew(false); setLessonId(entry.id); setMode('preview') }} key={entry.id}>
             <IconBook size={18} aria-hidden="true" /><span>{entry.title}</span><small>{entry.revisions.length} revision{entry.revisions.length === 1 ? '' : 's'}</small>
           </button>
         ))}
         <button type="button" className={creatingNew ? 'lesson-pick new active' : 'lesson-pick new'} onClick={() => { setCreatingNew(true); setLessonId(undefined); setDraft(blankSpec); setTeachingPlan(null); setTeachingReport(null); setMode('storyboard') }}><IconPlus size={18} aria-hidden="true" /> New lesson</button>
       </div>
 
-      {mode === 'storyboard' ? (
+      <div className="lesson-mode-panel" hidden={mode !== 'storyboard'}>
         <div className="storyboard-layout">
           <aside className="lesson-brief">
             <label>Lesson title<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
@@ -364,15 +367,14 @@ export function LessonStudio({ courseId, lessons, demo, onLessonsChange, onJobCr
             <button className="button" type="button" onClick={() => setDraft({ ...draft, chapters: [...draft.chapters, { id: `chapter-${Date.now()}`, title: 'New chapter', objective: 'Explain the next idea.', scenes: [newScene()] }] })}><IconPlus size={18} aria-hidden="true" /> Add chapter</button>
           </div>
         </div>
-      ) : revision ? (
-        <LessonPreview revision={revision} demo={demo} onRender={render} onFollowup={createFollowup} busy={busy} onContext={onVideoContext} />
-      ) : null}
+      </div>
+      {revision && <div className="lesson-mode-panel" hidden={mode !== 'preview'}><LessonPreview active={active && mode === 'preview'} revision={revision} sources={sources} onSceneReferences={onSceneReferences} sourceImages={sourceImages} demo={demo} onRender={render} onFollowup={createFollowup} busy={busy} onContext={onVideoContext} /></div>}
       {confirmDelete && lesson && <ConfirmDialog title={`Remove ${lesson.title}?`} message="This removes every revision and rendered artifact for the lesson. This cannot be undone." confirmLabel="Remove lesson" busy={busy} onCancel={() => setConfirmDelete(false)} onConfirm={() => void deleteLesson()} />}
     </section>
   )
 }
 
-function LessonPreview({ revision, demo, onRender, onFollowup, busy, onContext }: { revision: LessonRevision; demo: boolean; onRender: () => void; onFollowup: (context: VideoContext) => void; busy: boolean; onContext: (context: VideoContext) => void }) {
+function LessonPreview({ active, revision, sources, onSceneReferences, sourceImages, demo, onRender, onFollowup, busy, onContext }: { active: boolean; revision: LessonRevision; sources: Source[]; onSceneReferences: (context: SceneReferences | undefined) => void; sourceImages: Record<string, SourceThumbnail>; demo: boolean; onRender: () => void; onFollowup: (context: VideoContext) => void; busy: boolean; onContext: (context: VideoContext) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const scenes = useMemo(() => revision.spec.chapters.flatMap((chapter) => chapter.scenes.map((scene) => {
     const rendered = revision.manifest?.scenes?.find((entry) => entry.scene_id === scene.id)
@@ -398,8 +400,16 @@ function LessonPreview({ revision, demo, onRender, onFollowup, busy, onContext }
   const practicePoints = revision.manifest?.practice ?? []
   const cues = revision.manifest?.cues ?? []
   const activeCue = cues.find((cue) => time >= cue.start_seconds && time < cue.end_seconds)
-  const scene = sceneAtTime(scenes, time, duration) ?? scenes.find((entry) => entry.id === sceneId) ?? scenes[0]
+  const scene = (revision.video_url ? sceneAtTime(scenes, time, duration) : undefined) ?? scenes.find((entry) => entry.id === sceneId) ?? scenes[0]
+  useEffect(() => {
+    onSceneReferences(active && scene ? { revisionId: revision.id, sceneId: scene.id, title: scene.title, citations: sceneCitations(revision, scene, sources) } : undefined)
+    return () => onSceneReferences(undefined)
+  }, [active, scene, revision, sources, onSceneReferences])
   const firstSceneId = scenes[0]?.id
+  const chapters = revision.spec.chapters.map((chapter) => ({
+    ...chapter,
+    firstScene: scenes.find((candidate) => candidate.chapterId === chapter.id),
+  }))
 
   useEffect(() => {
     setTime(0)
@@ -413,12 +423,17 @@ function LessonPreview({ revision, demo, onRender, onFollowup, busy, onContext }
   }, [firstSceneId, revision.id])
 
   useEffect(() => {
+    if (!active) videoRef.current?.pause()
+  }, [active])
+
+  useEffect(() => {
+    if (!revision.video_url) return
     const current = sceneAtTime(scenes, time, duration)
     if (current && current.id !== sceneId) {
       setSceneId(current.id)
       setObjectIds([])
     }
-  }, [duration, sceneId, scenes, time])
+  }, [duration, revision.video_url, sceneId, scenes, time])
 
   const seek = (seconds: number) => {
     previousVideoTime.current = seconds
@@ -426,6 +441,11 @@ function LessonPreview({ revision, demo, onRender, onFollowup, busy, onContext }
     setAnswerVisible(false)
     setTime(seconds)
     if (videoRef.current) videoRef.current.currentTime = seconds
+  }
+
+  const playVideo = () => {
+    const attempt = videoRef.current?.play()
+    if (attempt) void attempt.catch(() => undefined)
   }
 
   const openPractice = (point: PracticeCheckpoint) => {
@@ -448,7 +468,7 @@ function LessonPreview({ revision, demo, onRender, onFollowup, busy, onContext }
   const captureContext = (): VideoContext | undefined => {
     const actualTime = timelineSeconds(videoRef.current?.currentTime ?? time)
     videoRef.current?.pause()
-    const actualScene = sceneAtTime(scenes, actualTime, duration) ?? scene
+    const actualScene = (revision.video_url ? sceneAtTime(scenes, actualTime, duration) : undefined) ?? scene
     if (!actualScene) return undefined
     setTime(actualTime)
     return { revision_id: revision.id, scene_id: actualScene.id, time_seconds: actualTime, object_ids: actualScene.id === scene?.id ? objectIds : [], label: `${actualScene.title} at ${formatTime(actualTime)}` }
@@ -464,19 +484,14 @@ function LessonPreview({ revision, demo, onRender, onFollowup, busy, onContext }
               {revision.captions_url && <track default={cues.length === 0} kind="captions" src={revision.captions_url} srcLang="en" label="English" />}
             </video>
           ) : (
-            <ScenePreview scene={scene} />
+            <ScenePreview scene={scene} sourceImages={sourceImages} />
           )}
         </div>
+        <div className="cinema-chapters"><h3>Chapters</h3><div className="chapter-track">{chapters.map((chapter, index) => <button type="button" aria-label={`Play chapter ${index + 1}: ${chapter.title}`} className={chapter.id === scene?.chapterId ? 'chapter-cue active' : 'chapter-cue'} onClick={() => { if (chapter.firstScene) { setSceneId(chapter.firstScene.id); seek(sceneSeekTime(chapter.firstScene, duration)); setObjectIds([]) } }} key={chapter.id}><SceneThumbnail scene={chapter.firstScene ?? chapter.scenes[0]} sourceImages={sourceImages} /><span><strong>{index + 1}. {chapter.title}</strong><small>{revision.video_url ? formatTime(chapter.firstScene?.start_seconds ?? chapter.start_seconds ?? 0) : 'Storyboard'}</small></span></button>)}</div></div>
         {cues.length > 0 && <><label className="caption-toggle"><input type="checkbox" checked={showCaptions} onChange={(event) => setShowCaptions(event.target.checked)} /> Captions</label>{showCaptions && <div className="lesson-captions" role="region" aria-label="Captions" aria-live="off"><MathText text={activeCue?.text ?? practice?.question ?? '\u00a0'} /></div>}</>}
-        <div className="timeline-controls">
-          <button className="icon-button" type="button" aria-label="Play preview" onClick={() => videoRef.current?.play()} disabled={!revision.video_url}><IconPlayerPlay size={19} /></button>
-          <span>{formatTime(time)}</span>
-          <label className="timeline"><span className="sr-only">Lesson time</span><input type="range" min="0" max={duration} step="0.1" value={time} onChange={(event) => seek(Number(event.target.value))} /></label>
-          <span>{formatTime(duration)}</span>
-        </div>
-        <div className="duration-note"><IconClock size={16} aria-hidden="true" /><span>Actual preview {formatTime(duration)}. Requested {revision.spec.target_minutes} minutes.</span></div>
-        {practicePoints.length > 0 && <div className="practice-controls"><label><input type="checkbox" checked={pauseAtPractice} onChange={(event) => setPauseAtPractice(event.target.checked)} /> Pause at practice questions</label><div className="button-row">{practicePoints.map((point, index) => <button type="button" className="button compact" key={point.id} onClick={() => openPractice(point)} title={point.question}>Practice {index + 1} · {formatTime(point.time_seconds)}</button>)}</div></div>}
-        {practice && <section className="practice-card" aria-label="Practice question"><span className="quiet-label">Pause and think</span><h3><MathText text={practice.question} /></h3>{answerVisible && <p><MathText text={practice.answer} /></p>}<div className="button-row"><button className="button" type="button" onClick={() => setAnswerVisible((value) => !value)}>{answerVisible ? 'Hide explanation' : 'Reveal explanation'}</button><button className="button primary" type="button" onClick={() => { setPractice(undefined); void videoRef.current?.play() }}>Continue lesson <IconPlayerPlay size={16} aria-hidden="true" /></button></div><small>Revealing an explanation does not mark this concept as learned.</small></section>}
+        <div className="duration-note"><IconClock size={16} aria-hidden="true" /><span>{revision.video_url ? `Lesson ${formatTime(duration)}` : 'Storyboard preview. Video has not been rendered.'}</span></div>
+        {practicePoints.length > 0 && <details className="practice-jumps"><summary>Practice checkpoints <span>{practicePoints.length}</span></summary><div className="practice-controls"><label><input type="checkbox" checked={pauseAtPractice} onChange={(event) => setPauseAtPractice(event.target.checked)} /> Pause at practice questions</label><div className="button-row">{practicePoints.map((point, index) => <button type="button" className="button compact" key={point.id} onClick={() => openPractice(point)} title={point.question}>Practice {index + 1} · {formatTime(point.time_seconds)}</button>)}</div></div></details>}
+        {practice && <section className="practice-card" aria-label="Practice question"><span className="quiet-label">Pause and think</span><h3><MathText text={practice.question} /></h3>{answerVisible && <p><MathText text={practice.answer} /></p>}<div className="button-row"><button className="button" type="button" onClick={() => setAnswerVisible((value) => !value)}>{answerVisible ? 'Hide explanation' : 'Reveal explanation'}</button><button className="button primary" type="button" onClick={() => { setPractice(undefined); playVideo() }}>Continue lesson <IconPlayerPlay size={16} aria-hidden="true" /></button></div><small>Revealing an explanation does not mark this concept as learned.</small></section>}
         {revision.manifest?.warnings?.map((warning) => <p className="inline-note" key={warning}>{warning}</p>)}
         {!revision.video_url && (
           <div className="render-callout"><div><strong>{demo ? 'Curated scene preview' : 'Storyboard is ready to render'}</strong><p>{demo ? 'This browser demo uses interactive scene art and no generated media.' : 'Rendering creates the video, captions, transcript, and timestamp manifest.'}</p></div><button className="button primary" type="button" onClick={onRender} disabled={busy}><IconMovie size={18} aria-hidden="true" /> {busy ? 'Queuing' : demo ? 'Demo render info' : 'Render video'}</button></div>
@@ -490,20 +505,16 @@ function LessonPreview({ revision, demo, onRender, onFollowup, busy, onContext }
           <fieldset className="object-picker"><legend>Select visual context</legend>{scene.objects.map((object) => <button type="button" aria-pressed={objectIds.includes(object.id)} className={objectIds.includes(object.id) ? 'object-chip active' : 'object-chip'} onClick={() => setObjectIds((items) => items.includes(object.id) ? items.filter((id) => id !== object.id) : [...items, object.id])} key={object.id}>{object.label}</button>)}</fieldset>
         ) : null}
         {scene && <div className="preview-actions"><button className="button primary full" type="button" onClick={() => { const context = captureContext(); if (context) onContext(context) }}>Ask about this moment <IconArrowRight size={18} aria-hidden="true" /></button><button className="button full" type="button" disabled={busy} onClick={() => { const context = captureContext(); if (context) onFollowup(context) }}><IconMovie size={18} aria-hidden="true" /> Create focused follow-up lesson</button></div>}
-        <div className="transcript-list"><h3>Scenes</h3>{scenes.map((entry) => <button type="button" className={entry.id === scene?.id ? 'transcript-cue active' : 'transcript-cue'} onClick={() => { setSceneId(entry.id); seek(sceneSeekTime(entry, duration)); setObjectIds([]) }} key={entry.id}><span>{formatTime(entry.start_seconds ?? 0)}</span><span><strong>{entry.title}</strong><small>{entry.chapterTitle}</small></span></button>)}</div>
+        <details className="full-transcript"><summary>Full transcript <span>{scenes.length} scenes</span></summary><div>{scenes.map((entry) => <button type="button" className={entry.id === scene?.id ? 'transcript-scene active' : 'transcript-scene'} onClick={() => { setSceneId(entry.id); seek(sceneSeekTime(entry, duration)); setObjectIds([]) }} key={entry.id}><span>{formatTime(entry.start_seconds ?? 0)}</span><span><strong>{entry.title}</strong><small>{entry.narration}</small></span></button>)}</div></details>
       </aside>
     </div>
   )
 }
 
-function ScenePreview({ scene }: { scene?: LessonChapter['scenes'][number] & { chapterTitle: string } }) {
+function ScenePreview({ scene, sourceImages }: { scene?: LessonChapter['scenes'][number] & { chapterTitle: string }; sourceImages: Record<string, SourceThumbnail> }) {
   return (
     <div className="scene-preview" aria-label={scene ? `Scene preview: ${scene.title}` : 'Scene preview unavailable'}>
-      <div className="preview-route"><span /><span /><span /></div>
-      <div className="preview-bus first">A</div>
-      <div className="preview-bus second">B</div>
-      <div className="preview-gap"><span>service gap</span></div>
-      <div className="preview-caption"><small>{scene?.chapterTitle}</small><strong>{scene?.title ?? 'Scene preview'}</strong></div>
+      {scene ? <SceneThumbnail scene={scene} sourceImages={sourceImages} /> : <p>No scene preview is available.</p>}
     </div>
   )
 }

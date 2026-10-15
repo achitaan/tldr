@@ -1,6 +1,6 @@
 # TLDR UI redesign checklist
 
-Status: on October 15, 2026, the user selected **02 Cinema for Video mode** and **03 Margin for Notes/Text mode** from the new image mockups. The complete direction and shared behavior are recorded in [the project overview, section 16](PROJECT-OVERVIEW.md#16-frontend-design-directions). Implementation and usability acceptance remain pending. The current Focus Canvas interface is a functional prototype; the selected references replace it as the intended visual direction.
+Status: on October 15, 2026, the user selected **02 Cinema for Video mode** and **03 Margin for Notes/Text mode** from the new image mockups. The initial two-mode implementation is complete; [UI modes and verification](UI-MODES.md) records its behavior, browser evidence, and review limits. The complete direction is recorded in [the project overview, section 16](PROJECT-OVERVIEW.md#16-frontend-design-directions). Human usability acceptance and the remaining items below are still open.
 
 ## First: establish the design direction
 
@@ -11,18 +11,21 @@ Status: on October 15, 2026, the user selected **02 Cinema for Video mode** and 
 
 ## High priority: layout and hierarchy
 
-- [ ] Give the active document or lesson the largest, clearest area. Provide a focus mode for reading and watching.
-- [ ] Make the tutor panel collapsible and resizable; preserve the user's chosen widths.
-- [ ] Show extracted text on demand rather than permanently squeezing the original page into a third narrow column.
+- [x] Give the active document or lesson the largest area, with separate reading and watching modes and a collapsible course browser/tutor.
+- [x] Give both sidebars consistent show/hide controls; keep the left visibility choice across modes and reloads.
+- [x] Use the Notes-style Sources/Tutor/Flashcards sidebar in every mode, with chat history, New chat, Back, and Escape navigation.
+- [ ] Add sidebar resizing and preserve the user's chosen widths.
+- [x] Separate formatted reading from original-image/extraction tools rather than permanently squeezing both into the reading area.
 - [ ] Simplify the stacked course header, workspace navigation, source header and page toolbar. Remove repeated labels and competing headings.
 - [ ] Consolidate Add source, Paste text and Import webpage into one clear intake flow.
-- [ ] Move export and destructive actions into an appropriate secondary menu. Keep deletion separated from routine study actions.
-- [ ] Replace numbered course entries and long sidebar descriptions with a compact course structure, search and clear selection states.
+- [x] Move course export/removal and source intake/removal into secondary menus. Lesson removal remains available in its header.
+- [x] Add the textbook-style My Courses outline, expandable sources/pages, Library shortcuts, and clear selection states in Notes.
+- [ ] Add course/source search and refine long-title handling.
 
 ## High priority: visual system
 
-- [ ] Define consistent typography, spacing, surfaces, borders, corner radii and icon sizes.
-- [ ] Choose a restrained neutral palette and one interaction accent. Use semantic colors for meaningful states.
+- [x] Define shared typography, surfaces, borders, and corner-radius tokens for the two selected modes. Continue refining spacing and icon sizing through user feedback.
+- [x] Choose restrained Light/Dark palettes independently of layout; inherit the selected appearance across storyboards, study tools, menus, and Activity, and retain it across navigation and reloads.
 - [ ] Reduce outlined buttons, nested cards, badges and tiny uppercase labels.
 - [ ] Establish readable sizes for body text, diagrams, equations and supporting information; avoid oversized repeated titles.
 - [ ] Standardize primary, secondary, destructive, disabled, loading, hover and keyboard-focus states.
@@ -54,7 +57,7 @@ The real Paul's Online Math Notes extraction previews 48 formulas on its first p
 - [ ] Make the PDF/image canvas feel like a document reader, with consistent zoom, fit-to-width, page navigation and rotation controls.
 - [ ] Put manual normalized coordinates behind an advanced control; make drawing, moving and resizing regions the normal workflow.
 - [ ] Make highlights, selection handles and citations clear without covering important labels or connections.
-- [ ] Add a clean read/edit/preview treatment for OCR corrections and mathematical source text.
+- [x] Add a clean Read/Source tools treatment for OCR corrections and mathematical source text.
 - [ ] Improve the source list with useful titles, file types, page counts, search and unobtrusive processing states.
 - [ ] Show website provenance and extraction limitations where they help the student understand the source.
 

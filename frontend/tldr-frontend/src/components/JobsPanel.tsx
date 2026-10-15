@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { IconAlertTriangle, IconCheck, IconClockPause, IconPlayerPlay, IconRefresh, IconX } from '../icons'
 import { api } from '../lib/api'
 import type { Job, ServiceStatus } from '../types'
@@ -11,6 +12,12 @@ export function JobsPanel({ jobs, status, demo, onClose, onJobsChange, onStatusC
   onStatusChange: (status: ServiceStatus) => void
   onNotice: (message: string) => void
 }) {
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    closeRef.current?.focus()
+    return () => previousFocus?.focus()
+  }, [])
   const update = (next: Job) => onJobsChange(jobs.map((job) => job.id === next.id ? next : job))
   const act = async (job: Job, action: 'cancel' | 'retry') => {
     if (demo) { onNotice('Demo jobs are static examples.'); return }
@@ -32,8 +39,8 @@ export function JobsPanel({ jobs, status, demo, onClose, onJobsChange, onStatusC
 
   return (
     <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-      <aside className="jobs-panel" role="dialog" aria-modal="true" aria-labelledby="activity-heading">
-        <header><div><span className="quiet-label">Background work</span><h2 id="activity-heading">Activity</h2></div><button className="icon-button" type="button" aria-label="Close activity" onClick={onClose}><IconX size={19} /></button></header>
+      <aside className="jobs-panel" role="dialog" aria-modal="true" aria-labelledby="activity-heading" onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose() } }}>
+        <header><div><span className="quiet-label">Background work</span><h2 id="activity-heading">Activity</h2></div><button ref={closeRef} className="icon-button" type="button" aria-label="Close activity" onClick={onClose}><IconX size={19} /></button></header>
         {status?.quota_paused && <div className="service-warning"><IconClockPause size={20} aria-hidden="true" /><div><strong>Generation is paused</strong><p>Review the configuration, then explicitly resume before retrying jobs.</p><button className="button compact" type="button" onClick={resume}>Resume generation</button></div></div>}
         {status && !status.generation_enabled && !demo && <div className="service-warning"><IconAlertTriangle size={20} aria-hidden="true" /><div><strong>Generation is not configured</strong><p>{status.configuration_issues.join(' ') || 'Check the local service configuration.'}</p></div></div>}
         <div className="job-list">

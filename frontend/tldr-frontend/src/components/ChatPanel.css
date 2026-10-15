@@ -1,0 +1,17 @@
+.chat-panel { min-height: 0; height: 100%; }
+.chat-header > div { min-width: 0; }
+.chat-header h2 { overflow-wrap: anywhere; }
+.chat-back { padding: 0; margin-bottom: .45rem; border: 0; background: transparent; color: var(--muted); font-size: .78rem; cursor: pointer; }
+.chat-new { flex-shrink: 0; font-size: .78rem; }
+.chat-history { flex: 1; min-height: 0; overflow: auto; padding: 0 1rem 1rem; }
+.chat-history-intro { margin: .3rem 0 1.1rem; color: var(--muted); font-size: .8rem; }
+.chat-history ul { margin: 0; padding: 0; list-style: none; }
+.chat-history li { border-bottom: 1px solid var(--line); }
+.chat-history li > button { display: flex; width: 100%; flex-direction: column; gap: .4rem; padding: .95rem .3rem; border: 0; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+.chat-history li > button:hover { background: var(--paper); }
+.chat-history strong { font-size: .9rem; font-weight: 500; overflow-wrap: anywhere; }
+.chat-history li span { color: var(--muted); font-size: .73rem; }
+.chat-error { padding: .7rem; border: 1px solid var(--line); border-radius: .4rem; }
+.chat-panel .chat-context { flex-wrap: wrap; }
+.chat-panel .context-chip { max-width: 100%; }
+.chat-panel .context-chip > span { overflow-wrap: anywhere; }

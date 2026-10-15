@@ -102,7 +102,7 @@ export const api = {
   createRegion: (body: Omit<Region, 'id'>) => request<Region>('/regions/', { method: 'POST', body }),
   updateRegion: (region: Region['id'], body: Partial<Region>) => request<Region>(`/regions/${region}/`, { method: 'PATCH', body }),
   conversations: (course: Course['id'], signal?: AbortSignal) => request<Conversation[]>(`/conversations/?course=${course}`, { signal }),
-  createConversation: (course: Course['id']) => request<Conversation>('/conversations/', { method: 'POST', body: { course, title: 'Course questions' } }),
+  createConversation: (course: Course['id'], title = 'Course questions') => request<Conversation>('/conversations/', { method: 'POST', body: { course, title } }),
   messages: (conversation: Conversation['id'], signal?: AbortSignal) => request<Message[]>(`/conversations/${conversation}/messages/`, { signal }),
   sendMessage: (conversation: Conversation['id'], body: { content: string; region_ids: Region['id'][]; context?: Message['context'] }) =>
     request<{ message: Message; job: Job }>(`/conversations/${conversation}/messages/`, { method: 'POST', body }),

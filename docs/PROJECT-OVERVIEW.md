@@ -409,14 +409,16 @@ The ECE224 planning draft is revision ID 11 in a separate lesson. It contains ei
 
 ### Selected direction: Cinema + Margin
 
-On October 15, 2026, the user selected a combination of **02 Cinema for Video mode** and **03 Margin for Notes/Text mode**, using the two attached reference images. This is the current frontend direction. Implementation and usability acceptance remain pending.
+On October 15, 2026, the user selected a combination of **02 Cinema for Video mode** and **03 Margin for Notes/Text mode**, using the two attached reference images. The initial implementation now provides both modes, persistent workspace state, a source reader, real chapter thumbnails, and a collapsible tutor. See [UI modes and verification](UI-MODES.md) for behavior and checks. Human usability acceptance and further refinement remain open.
 
-| Mode | Layout and appearance | Main task |
+Light/Dark appearance is selected independently of Video/Notes layout, saved in browser storage, and synchronized between open tabs. Both layouts support both appearances; navigation does not change the palette.
+
+| Mode | Layout | Main task |
 | --- | --- | --- |
-| Video | Charcoal teaching surface, restrained amber accent, dominant video canvas, chapters below, contextual tutor on the right, expandable transcript | Watch an explanation and ask about a particular moment |
-| Notes/Text | Light academic reading surface, navy text and accents, course/section outline on the left, readable central text and equations, Sources/Tutor/Flashcards tabs on the right | Read, annotate, and study written material |
+| Video | Dominant video canvas, chapters below, contextual tutor on the right, expandable transcript | Watch an explanation and ask about a particular moment |
+| Notes/Text | Academic reading surface, textbook My Courses and Library outline on the left, readable central text and equations, Sources/Tutor/Flashcards tabs on the right | Read, annotate, and study written material |
 
-Both modes belong to one application and use shared course navigation, content identity, control styles, citation behavior, and keyboard conventions. A visible **Video / Notes** switch should make the relationship clear. The header should retain the course and current topic; the larger course browser can collapse when watching a lesson.
+Both modes belong to one application and use shared course navigation, content identity, control styles, citation behavior, and keyboard conventions. The left navigation opens and closes consistently in every mode. The right study sidebar keeps the same **Sources / Tutor / Flashcards** shell throughout; Tutor includes a chat list, New chat, and Back to chats. Video moment questions enter this same Tutor interface with attached context. See [UI modes](UI-MODES.md) for persistence and session boundaries.
 
 Video mode should prioritize the existing real player and its working checkpoint behavior. Chapter navigation must use the actual manifest. The right-hand tutor should make the attached timestamp and selected object clear. Practice questions must remain readable without covering important instructional content. The transcript can expand when needed.
 
@@ -453,7 +455,7 @@ Ten image mockups were generated for comparison. They remain useful references; 
 | 09 | Recall | Large practice question with explanation reveal and review queue |
 | 10 | Ink | Mathematical teaching canvas with a compact contextual tutor |
 
-These are visual concepts. Their course text, references, and diagrams are placeholders and are not reviewed learning material. They have not been implemented as the application's new frontend.
+These are visual concepts. Their course text, references, and diagrams are placeholders and are not reviewed learning material. The selected Cinema and Margin directions have been adapted into the application using real course data; the other concepts remain unimplemented.
 
 The ten PNGs and their ZIP are stored under `output/imagegen/tldr-ui-round-2/`. Implementation should apply a coherent navigation, typography, spacing, and component system across the selected Cinema and Margin modes.
 
@@ -484,7 +486,7 @@ The application is intended for a single user on loopback interfaces. Public acc
 | Better learner memory | Track responses and difficulties without treating watching as mastery |
 | Targeted practice and review | Use reviewed rubrics and learner responses to choose appropriate follow-ups |
 | Broader STEM tools | Add checked solvers, graphing, and simulation capabilities with explicit assumptions |
-| Frontend redesign | Implement the selected Cinema Video mode and Margin Notes/Text mode with shared navigation and context |
+| Frontend refinement | Obtain user feedback on the implemented Cinema/Notes workspace, refine source/tutor organization, and complete broader accessibility review |
 | Listening and learner evaluation | Check pronunciation, pacing, readability, comprehension, and later application |
 
 A practical continuation is to verify one complete live source-grounded tutoring request, connect the planning layer to a bounded production compiler, and evaluate a representative reviewed lesson before generalizing across subjects.
